@@ -76,7 +76,7 @@ func (p *ETagsParser) Defs() []*Def {
 	}
 
 	tags := p.Tags()
-	defs := make([]*Def, len(tags))
+	defs := make([]*Def, 0, len(tags))
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
 		name := fmt.Sprintf("%s$%d", tag.Name, fileDefNames[tag.File][tag.Name])
@@ -89,7 +89,7 @@ func (p *ETagsParser) Defs() []*Def {
 		defStart := tag.ByteOff + nameIdx
 		defEnd := defStart + len(tag.Name)
 
-		defs[i] = &Def{
+		defs = append(defs, &Def{
 			DefKey: graph.DefKey{
 				UnitType: langUnitType(p.config.Lang(tag.File)),
 				Unit:     ".",
@@ -102,7 +102,7 @@ func (p *ETagsParser) Defs() []*Def {
 			Exported: true,
 			Local:    false,
 			Data:     defFormatDataFromTag(tag),
-		}
+		})
 	}
 	return defs
 }
