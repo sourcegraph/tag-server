@@ -54,12 +54,16 @@ func (p *ETagsParser) Units() []*unit.SourceUnit {
 	units := make([]*unit.SourceUnit, 0, len(p.langFiles))
 	for lang, files := range p.langFiles {
 		u := &unit.SourceUnit{
-			Key:  unit.Key{Version: "", Type: fmt.Sprintf("%s-ctags", lang), Name: "."},
+			Key:  unit.Key{Version: "", Type: langUnitType(lang), Name: "."},
 			Info: unit.Info{Files: files},
 		}
 		units = append(units, u)
 	}
 	return units
+}
+
+func langUnitType(lang string) string {
+	return fmt.Sprintf("%s-ctags", lang)
 }
 
 func (p *ETagsParser) Defs() []*Def {
@@ -70,8 +74,8 @@ func (p *ETagsParser) Defs() []*Def {
 		formatData, _ := json.Marshal(defFormatDataFromTag(tag))
 		defs[i] = &Def{
 			DefKey: graph.DefKey{
-				UnitType: "GoPackage", // dummy
-				Unit:     "CTagsUnit", // dummy
+				UnitType: p.config.Lang(tag.File),
+				Unit:     ".",
 				Path:     fmt.Sprintf("%s:%s", tag.File, tag.Name),
 			},
 			Name:     tag.Name,
@@ -84,7 +88,28 @@ func (p *ETagsParser) Defs() []*Def {
 		}
 	}
 	return defs
+}
 
+func (p *ETagsParser) Refs() []*graph.Ref {
+	defs := p.Defs()
+	refs := make([]*graph.Ref, 0, len(defs))
+	for _, def := range defs {
+		refs = append(refs, &graph.Ref{
+			DefRepo:     def.Repo,
+			DefUnitType: def.UnitType,
+			DefUnit:     def.Unit,
+			DefPath:     def.Path,
+			Repo:        def.Repo,
+			CommitID:    def.CommitID,
+			UnitType:    def.UnitType,
+			Unit:        def.Unit,
+			Def:         true,
+			File:        def.File,
+			Start:       def.DefStart,
+			End:         def.DefEnd,
+		})
+	}
+	return refs
 }
 
 func (p *ETagsParser) Tags() []Tag {

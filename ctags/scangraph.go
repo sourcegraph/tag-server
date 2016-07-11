@@ -18,6 +18,7 @@ func Graph(files []string) (*Output, error) {
 	}
 	return &Output{
 		Defs: p.Defs(),
+		Refs: p.Refs(),
 	}, nil
 }
 
