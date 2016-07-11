@@ -54,6 +54,8 @@ type GraphCmd struct {
 var graphCmd GraphCmd
 
 func (c *GraphCmd) Execute(args []string) error {
+	os.Stdin.Close() // ignore input source unit
+
 	out, err := ctags.Graph(c.Files)
 	if err != nil {
 		fmt.Printf("failed due to error: %s\n", err)
