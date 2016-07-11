@@ -2,7 +2,6 @@ package ctags
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 type Tag struct {
@@ -81,11 +79,6 @@ func (p *ETagsParser) Defs() []*Def {
 	defs := make([]*Def, len(tags))
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
-		var formatData []byte
-		if d := defFormatDataFromTag(tag); d != nil {
-			formatData, _ = json.Marshal(d)
-		}
-
 		name := fmt.Sprintf("%s$%d", tag.Name, fileDefNames[tag.File][tag.Name])
 		fileDefNames[tag.File][tag.Name]++
 
@@ -108,7 +101,7 @@ func (p *ETagsParser) Defs() []*Def {
 			DefEnd:   uint32(defEnd),
 			Exported: true,
 			Local:    false,
-			Data:     pbtypes.RawMessage(formatData),
+			Data:     defFormatDataFromTag(tag),
 		}
 	}
 	return defs
@@ -145,7 +138,7 @@ func (p *ETagsParser) Parse(r *bufio.Reader) error {
 
 	line, err := r.ReadString('\n')
 	for ; err == nil; line, err = r.ReadString('\n') {
-		if err := p.parseLine(strings.TrimSpace(line)); err != nil {
+		if err := p.parseLine(strings.TrimRight(line, "\r\n")); err != nil {
 			return err
 		}
 	}
@@ -156,7 +149,7 @@ func (p *ETagsParser) Parse(r *bufio.Reader) error {
 }
 
 func (p *ETagsParser) parseLine(line string) error {
-	if len(line) == 0 || strings.HasPrefix(line, "!") {
+	if len(strings.TrimSpace(line)) == 0 || strings.HasPrefix(line, "!") {
 		return nil
 	}
 
