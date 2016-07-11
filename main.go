@@ -87,3 +87,26 @@ func (c *ScanCmd) Execute(args []string) error {
 	}
 	return json.NewEncoder(os.Stdout).Encode(units)
 }
+
+/*
+ * Depresolve
+ */
+func init() {
+	_, err := flagParser.AddCommand("depresolve",
+		"srclib depresolve phase",
+		"srclib depresolve phase",
+		&depresolveCmd,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type DepresolveCmd struct{}
+
+var depresolveCmd DepresolveCmd
+
+func (c *DepresolveCmd) Execute(args []string) error {
+	fmt.Println("[]")
+	return nil
+}
