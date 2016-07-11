@@ -15,6 +15,10 @@ import (
 )
 
 func DefsForFiles(files []string) ([]*Def, error) {
+	if len(files) == 0 {
+		return nil, nil
+	}
+
 	args := []string{"-e", "-f", "tags"}
 	args = append(args, files...)
 	if err := exec.Command("ctags", args...).Run(); err != nil {
