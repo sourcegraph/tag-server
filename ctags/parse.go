@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 
@@ -71,7 +72,10 @@ func (p *ETagsParser) Defs() []*Def {
 	defs := make([]*Def, len(tags))
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
-		formatData, _ := json.Marshal(defFormatDataFromTag(tag))
+		var formatData []byte
+		if d := defFormatDataFromTag(tag); d != nil {
+			formatData, _ = json.Marshal(d)
+		}
 		defs[i] = &Def{
 			DefKey: graph.DefKey{
 				UnitType: p.config.Lang(tag.File),
@@ -192,6 +196,10 @@ func (p *ETagsParser) parseLine(line string) error {
 // Precondition: it assumes that tag.Name exists in tag.Def.
 func defFormatDataFromTag(tag Tag) *DefFormatData {
 	nameIdx := strings.Index(tag.Def, tag.Name)
+	if nameIdx < 0 {
+		log.Printf("! warn: name (%q) not found in definition %q", tag.Name, tag.Def)
+		return nil
+	}
 	keyword := strings.TrimSpace(tag.Def[:nameIdx])
 	typ := tag.Def[nameIdx+len(tag.Name):]
 	sep := ""
