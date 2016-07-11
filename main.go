@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/beyang/srclib-ctags/graph"
+	"github.com/beyang/srclib-ctags/ctags"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -38,8 +38,8 @@ func main() {
  */
 func init() {
 	_, err := flagParser.AddCommand("graph",
-		"graph a Go package",
-		"Graph a Go package, producing all defs, refs, and docs.",
+		"srclib graph phase",
+		"srclib graph phase",
 		&graphCmd,
 	)
 	if err != nil {
@@ -54,10 +54,36 @@ type GraphCmd struct {
 var graphCmd GraphCmd
 
 func (c *GraphCmd) Execute(args []string) error {
-	defs, err := graph.DefsForFiles(c.Files)
+	out, err := ctags.Graph(c.Files)
 	if err != nil {
 		fmt.Printf("failed due to error: %s\n", err)
 		os.Exit(1)
 	}
-	return json.NewEncoder(os.Stdout).Encode(defs)
+	return json.NewEncoder(os.Stdout).Encode(out)
+}
+
+/*
+ * Scan
+ */
+func init() {
+	_, err := flagParser.AddCommand("scan",
+		"srclib scan phase",
+		"srclib scan phase",
+		&scanCmd,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type ScanCmd struct{}
+
+var scanCmd ScanCmd
+
+func (c *ScanCmd) Execute(args []string) error {
+	units, err := ctags.Scan()
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(os.Stdout).Encode(units)
 }

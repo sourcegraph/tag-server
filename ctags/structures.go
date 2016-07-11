@@ -1,4 +1,4 @@
-package graph
+package ctags
 
 import "sourcegraph.com/sourcegraph/srclib/graph"
 
@@ -51,4 +51,10 @@ type Def struct {
 	// tree-path for some def.
 	// The following regex captures the children of a tree-path X: X(/-[^/]*)*(/[^/-][^/]*)
 	TreePath string `protobuf:"bytes,17,opt,name=TreePath,proto3" json:"TreePath,omitempty"`
+}
+
+type Output struct {
+	Defs []*Def
+	Refs []*graph.Ref
+	Docs []*graph.Doc
 }

@@ -1,45 +1,69 @@
-package graph
+package ctags
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func DefsForFiles(files []string) ([]*Def, error) {
-	if len(files) == 0 {
-		return nil, nil
-	}
-
-	args := []string{"-e", "-f", "tags"}
-	args = append(args, files...)
-	if err := exec.Command("ctags", args...).Run(); err != nil {
-		return nil, err
-	}
-	tagsFile, err := os.Open("tags")
-	if err != nil {
-		return nil, err
-	}
-	defer tagsFile.Close()
-
-	r := bufio.NewReader(tagsFile)
-	tags, err := (&ETagsParser{}).Parse(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return defsFromTags(tags), nil
+type Tag struct {
+	File    string
+	Def     string
+	Name    string
+	Line    int
+	ByteOff int
 }
 
-func defsFromTags(tags []Tag) []*Def {
+const (
+	sepTag = "\x7f"
+	sepPos = "\x01"
+	sepCol = ","
+)
+
+type ETagsParser struct {
+	// input
+	config *Config
+
+	// output
+	tags      []Tag
+	langFiles map[string][]string
+
+	// temporary state
+	curFile string
+}
+
+func NewParser() (*ETagsParser, error) {
+	cfg, err := getConfig()
+	if err != nil {
+		return nil, err
+	}
+	return &ETagsParser{
+		langFiles: make(map[string][]string),
+		config:    cfg,
+	}, nil
+}
+
+func (p *ETagsParser) Units() []*unit.SourceUnit {
+	units := make([]*unit.SourceUnit, 0, len(p.langFiles))
+	for lang, files := range p.langFiles {
+		u := &unit.SourceUnit{
+			Key:  unit.Key{Version: "", Type: fmt.Sprintf("%s-ctags", lang), Name: "."},
+			Info: unit.Info{Files: files},
+		}
+		units = append(units, u)
+	}
+	return units
+}
+
+func (p *ETagsParser) Defs() []*Def {
+	tags := p.Tags()
 	defs := make([]*Def, len(tags))
 	for i := 0; i < len(tags); i++ {
 		tag := tags[i]
@@ -60,70 +84,26 @@ func defsFromTags(tags []Tag) []*Def {
 		}
 	}
 	return defs
+
 }
 
-// defFormatDataFromTag returns the display formatting data for a
-// definition derived from the specified tag.
-//
-// Precondition: it assumes that tag.Name exists in tag.Def.
-func defFormatDataFromTag(tag Tag) *DefFormatData {
-	nameIdx := strings.Index(tag.Def, tag.Name)
-	keyword := strings.TrimSpace(tag.Def[:nameIdx])
-	typ := tag.Def[nameIdx+len(tag.Name):]
-	sep := ""
-	if len(typ) >= 1 && typ[0] == ':' {
-		sep, typ = typ[0:1], strings.TrimSpace(typ[1:])
-	}
-	return &DefFormatData{
-		Name:      tag.Name,
-		Keyword:   keyword,
-		Type:      typ,
-		Kind:      keyword,
-		Separator: sep,
-	}
+func (p *ETagsParser) Tags() []Tag {
+	return p.tags
 }
 
-// This mirrors the format data (DefData) struct of Sourcegraph's
-// basic def formatter. We don't depend directly on that because we
-// should have no dependencies on Sourcegraph here.
-type DefFormatData struct {
-	Name      string
-	Keyword   string
-	Type      string
-	Kind      string
-	Separator string
-}
+func (p *ETagsParser) Parse(r *bufio.Reader) error {
+	p.curFile = ""
 
-type Tag struct {
-	File    string
-	Def     string
-	Name    string
-	Line    int
-	ByteOff int
-}
-
-const (
-	sepTag = "\x7f"
-	sepPos = "\x01"
-	sepCol = ","
-)
-
-type ETagsParser struct {
-	curFile string
-	tags    []Tag
-}
-
-func (p *ETagsParser) Parse(r *bufio.Reader) ([]Tag, error) {
 	line, err := r.ReadString('\n')
 	for ; err == nil; line, err = r.ReadString('\n') {
 		if err := p.parseLine(strings.TrimSpace(line)); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	if err != nil && err != io.EOF {
-		return nil, err
+		return err
 	}
-	return p.tags, nil
+	return nil
 }
 
 func (p *ETagsParser) parseLine(line string) error {
@@ -141,7 +121,11 @@ func (p *ETagsParser) parseLine(line string) error {
 		if _, err := strconv.Atoi(cmps[1]); err != nil {
 			return fmt.Errorf("tags line parsing error: %s, line was %q", err, line)
 		}
-		p.curFile = cmps[0]
+
+		file := cmps[0]
+		lang := p.config.Lang(file)
+		p.curFile = file
+		p.langFiles[lang] = append(p.langFiles[lang], file)
 		return nil
 	}
 
@@ -175,4 +159,36 @@ func (p *ETagsParser) parseLine(line string) error {
 		ByteOff: colNo,
 	})
 	return nil
+}
+
+// defFormatDataFromTag returns the display formatting data for a
+// definition derived from the specified tag.
+//
+// Precondition: it assumes that tag.Name exists in tag.Def.
+func defFormatDataFromTag(tag Tag) *DefFormatData {
+	nameIdx := strings.Index(tag.Def, tag.Name)
+	keyword := strings.TrimSpace(tag.Def[:nameIdx])
+	typ := tag.Def[nameIdx+len(tag.Name):]
+	sep := ""
+	if len(typ) >= 1 && typ[0] == ':' {
+		sep, typ = typ[0:1], strings.TrimSpace(typ[1:])
+	}
+	return &DefFormatData{
+		Name:      tag.Name,
+		Keyword:   keyword,
+		Type:      typ,
+		Kind:      keyword,
+		Separator: sep,
+	}
+}
+
+// This mirrors the format data (DefData) struct of Sourcegraph's
+// basic def formatter. We don't depend directly on that because we
+// should have no dependencies on Sourcegraph here.
+type DefFormatData struct {
+	Name      string
+	Keyword   string
+	Type      string
+	Kind      string
+	Separator string
 }
