@@ -64,7 +64,8 @@ func (p *ETagsParser) Units() []*unit.SourceUnit {
 }
 
 func langUnitType(lang string) string {
-	return fmt.Sprintf("%s-ctags", lang)
+	// return fmt.Sprintf("%s-ctags", lang)
+	return "PipPackage"
 }
 
 func (p *ETagsParser) Defs() []*Def {

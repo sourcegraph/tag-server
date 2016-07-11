@@ -4,6 +4,7 @@
       "Subcmd": "scan",
       "Op": "scan",
       "SourceUnitTypes": [
+        "PipPackage",
         "Ada-ctags",
         "Ant-ctags",
         "Asm-ctags",
@@ -81,6 +82,7 @@
       "Subcmd": "graph",
       "Op": "graph",
       "SourceUnitTypes": [
+        "PipPackage",
         "Ada-ctags",
         "Ant-ctags",
         "Asm-ctags",
@@ -158,6 +160,7 @@
       "Subcmd": "depresolve",
       "Op": "depresolve",
       "SourceUnitTypes": [
+        "PipPackage",
         "Ada-ctags",
         "Ant-ctags",
         "Asm-ctags",
