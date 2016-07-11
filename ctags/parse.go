@@ -68,6 +68,14 @@ func langUnitType(lang string) string {
 }
 
 func (p *ETagsParser) Defs() []*Def {
+	// keep track of which names that have already occurred in a file
+	fileDefNames := make(map[string]map[string]int)
+	for _, files := range p.langFiles {
+		for _, file := range files {
+			fileDefNames[file] = make(map[string]int)
+		}
+	}
+
 	tags := p.Tags()
 	defs := make([]*Def, len(tags))
 	for i := 0; i < len(tags); i++ {
@@ -76,16 +84,27 @@ func (p *ETagsParser) Defs() []*Def {
 		if d := defFormatDataFromTag(tag); d != nil {
 			formatData, _ = json.Marshal(d)
 		}
+
+		name := fmt.Sprintf("%s$%d", tag.Name, fileDefNames[tag.File][tag.Name])
+		fileDefNames[tag.File][tag.Name]++
+
+		nameIdx := strings.Index(tag.Def, tag.Name)
+		if nameIdx < 0 {
+			continue
+		}
+		defStart := tag.ByteOff + nameIdx
+		defEnd := defStart + len(tag.Name)
+
 		defs[i] = &Def{
 			DefKey: graph.DefKey{
-				UnitType: p.config.Lang(tag.File),
+				UnitType: langUnitType(p.config.Lang(tag.File)),
 				Unit:     ".",
-				Path:     fmt.Sprintf("%s:%s", tag.File, tag.Name),
+				Path:     fmt.Sprintf("%s:%s", tag.File, name),
 			},
 			Name:     tag.Name,
 			File:     tag.File,
-			DefStart: uint32(tag.ByteOff),
-			DefEnd:   uint32(tag.ByteOff + len(tag.Name)),
+			DefStart: uint32(defStart),
+			DefEnd:   uint32(defEnd),
 			Exported: true,
 			Local:    false,
 			Data:     pbtypes.RawMessage(formatData),
