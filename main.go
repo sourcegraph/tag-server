@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/beyang/srclib-ctags/ctags"
 	"github.com/jessevdk/go-flags"
+	"github.com/sourcegraph/tag-server/ctags"
 )
 
 var (
