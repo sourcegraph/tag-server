@@ -4,21 +4,21 @@ import "net/http"
 
 type LangSvc interface {
 	Initialize(req *http.Request, params *InitializeParams, result *InitializeResult) error
-	Completion(req *http.Request, params TextDocumentPositionParams, result CompletionList) error
-	CompletionItemResolve(req *http.Request, params CompletionList, result CompletionList) error
-	HoverRequest(req *http.Request, params TextDocumentPositionParams, result Hover) error
-	SignatureHelpRequest(req *http.Request, params TextDocumentPositionParams, result SignatureHelp) error
-	GoToDefinition(req *http.Request, params TextDocumentPositionParams, result []Location) error
-	FindReferences(req *http.Request, params ReferenceParams, result []Location) error
-	DocumentHighlights(req *http.Request, params ReferenceParams, result DocumentHighlight) error
-	DocumentSymbols(req *http.Request, params DocumentSymbolParams, result []SymbolInformation) error
-	WorkplaceSymbols(req *http.Request, params WorkplaceSymbolParams, result []SymbolInformation) error
-	CodeAction(req *http.Request, params CodeActionParams, result []Command) error
-	CodeLensRequest(req *http.Request, params CodeLensParams, result []Command) error
-	CodeLensResolve(req *http.Request, params CodeLens, result CodeLens) error
-	DocumentFormatting(req *http.Request, params DocumentFormattingParams, result []TextEdit) error
-	DocumentOnTypeFormatting(req *http.Request, params DocumentFormattingParams, result []TextEdit) error
-	Rename(req *http.Request, params RenameParams, result WorkspaceEdit) error
+	Completion(req *http.Request, params *TextDocumentPositionParams, result *CompletionList) error
+	CompletionItemResolve(req *http.Request, params *CompletionList, result *CompletionList) error
+	HoverRequest(req *http.Request, params *TextDocumentPositionParams, result *Hover) error
+	SignatureHelpRequest(req *http.Request, params *TextDocumentPositionParams, result *SignatureHelp) error
+	GoToDefinition(req *http.Request, params *TextDocumentPositionParams, result *[]Location) error
+	FindReferences(req *http.Request, params *ReferenceParams, result *[]Location) error
+	DocumentHighlights(req *http.Request, params *ReferenceParams, result *DocumentHighlight) error
+	DocumentSymbols(req *http.Request, params *DocumentSymbolParams, result *[]SymbolInformation) error
+	WorkplaceSymbols(req *http.Request, params *WorkplaceSymbolParams, result *[]SymbolInformation) error
+	CodeAction(req *http.Request, params *CodeActionParams, result *[]Command) error
+	CodeLensRequest(req *http.Request, params *CodeLensParams, result *[]Command) error
+	CodeLensResolve(req *http.Request, params *CodeLens, result *CodeLens) error
+	DocumentFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error
+	DocumentOnTypeFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error
+	Rename(req *http.Request, params *RenameParams, result *WorkspaceEdit) error
 }
 
 type InitializeParams struct {
@@ -62,23 +62,25 @@ func Initialize(req *http.Request, params *InitializeParams, result *InitializeR
 	return nil
 }
 
-var TextDocumentSyncKind = map[string]int32{
+type TextDocumentSyncKind int
+
+const (
 	/**
 	* Defines how the host (editor) should sync document changes to the language server.
 	 */
-	"None": 0,
+	None TextDocumentSyncKind = 0
 
 	/**
 	 * Documents are synced by always sending the full content of the document.
 	 */
-	"Full": 1,
+	Full = 1
 
 	/**
 	 * Documents are synced by sending the full content on open. After that only incremental
 	 * updates to the document are sent.
 	 */
-	"Incremental": 2,
-}
+	Incremental = 2
+)
 
 type ServerCapabilities struct {
 	/**
@@ -184,26 +186,28 @@ type SignatureHelpOptions struct {
 	TriggerCharacters []string
 }
 
-var CompletionItemKind = map[string]int32{
-	"Text":        1,
-	"Method":      2,
-	"Function":    3,
-	"Constructor": 4,
-	"Field":       5,
-	"Variable":    6,
-	"Class":       7,
-	"Interface":   8,
-	"Module":      9,
-	"Property":    10,
-	"Unit":        11,
-	"Value":       12,
-	"Enum":        13,
-	"Keyword":     14,
-	"Snippet":     15,
-	"Color":       16,
-	"File":        17,
-	"Reference":   18,
-}
+type CompletionItemKind int
+
+const (
+	CIKText     CompletionItemKind = 1
+	Method                         = 2
+	Function                       = 3
+	Constructor                    = 4
+	Field                          = 5
+	Variable                       = 6
+	Class                          = 7
+	Interface                      = 8
+	Module                         = 9
+	Property                       = 10
+	Unit                           = 11
+	Value                          = 12
+	Enum                           = 13
+	Keyword                        = 14
+	Snippet                        = 15
+	Color                          = 16
+	File                           = 17
+	Reference                      = 18
+)
 
 type CompletionItem struct {
 	/**
@@ -271,11 +275,11 @@ type CompletionList struct {
 	Items []CompletionItem
 }
 
-func Completion(req *http.Request, params TextDocumentPositionParams, result CompletionList) error {
+func Completion(req *http.Request, params *TextDocumentPositionParams, result *CompletionList) error {
 	return nil
 }
 
-func CompletionItemResolve(req *http.Request, params CompletionList, result CompletionList) error {
+func CompletionItemResolve(req *http.Request, params *CompletionList, result *CompletionList) error {
 	return nil
 }
 
@@ -297,7 +301,7 @@ type MarkedString struct {
 	Value string
 }
 
-func HoverRequest(req *http.Request, params TextDocumentPositionParams, result Hover) error {
+func HoverRequest(req *http.Request, params *TextDocumentPositionParams, result *Hover) error {
 	return nil
 }
 
@@ -365,11 +369,11 @@ type ParameterInformation struct {
 	Documentation string
 }
 
-func SignatureHelpRequest(req *http.Request, params TextDocumentPositionParams, result SignatureHelp) error {
+func SignatureHelpRequest(req *http.Request, params *TextDocumentPositionParams, result *SignatureHelp) error {
 	return nil
 }
 
-func GoToDefinition(req *http.Request, params TextDocumentPositionParams, result []Location) error {
+func GoToDefinition(req *http.Request, params *TextDocumentPositionParams, result *[]Location) error {
 	return nil
 }
 
@@ -386,29 +390,31 @@ type ReferenceParams struct {
 	Context ReferenceContext
 }
 
-func FindReferences(req *http.Request, params ReferenceParams, result []Location) error {
+func FindReferences(req *http.Request, params *ReferenceParams, result *[]Location) error {
 	return nil
 }
 
 /**
  * A document highlight kind.
  */
-var DocumentHighlightKind = map[string]int32{
+type DocumentHighlightKind int
+
+const (
 	/**
 	 * A textual occurrance.
 	 */
-	"Text": 1,
+	Text DocumentHighlightKind = 1
 
 	/**
 	 * Read-access of a symbol, like reading a variable.
 	 */
-	"Read": 2,
+	Read = 2
 
 	/**
 	 * Write-access of a symbol, like writing to a variable.
 	 */
-	"Write": 3,
-}
+	Write = 3
+)
 
 /**
  * A document highlight is a range inside a text document which deserves
@@ -427,7 +433,7 @@ type DocumentHighlight struct {
 	Kind int32
 }
 
-func DocumentHighlights(req *http.Request, params ReferenceParams, result DocumentHighlight) error {
+func DocumentHighlights(req *http.Request, params *ReferenceParams, result *DocumentHighlight) error {
 	return nil
 }
 
@@ -438,26 +444,28 @@ type DocumentSymbolParams struct {
 	TextDocument TextDocumentIdentifier
 }
 
-var SymbolKind = map[string]int32{
-	"File":        1,
-	"Module":      2,
-	"Namespace":   3,
-	"Package":     4,
-	"Class":       5,
-	"Method":      6,
-	"Property":    7,
-	"Field":       8,
-	"Constructor": 9,
-	"Enum":        10,
-	"Interface":   11,
-	"Function":    12,
-	"Variable":    13,
-	"Constant":    14,
-	"String":      15,
-	"Number":      16,
-	"Boolean":     17,
-	"Array":       18,
-}
+type SymbolKind int
+
+const (
+	SKFile        SymbolKind = 1
+	SKModule                 = 2
+	Namespace                = 3
+	Package                  = 4
+	SKClass                  = 5
+	SKMethod                 = 6
+	SKProperty               = 7
+	SKField                  = 8
+	SKConstructor            = 9
+	SKEnum                   = 10
+	SKInterface              = 11
+	SKFunction               = 12
+	SKVariable               = 13
+	Constant                 = 14
+	String                   = 15
+	Number                   = 16
+	Boolean                  = 17
+	Array                    = 18
+)
 
 /**
  * Represents information about programming constructs like variables, classes,
@@ -485,7 +493,7 @@ type SymbolInformation struct {
 	ContainerName string
 }
 
-func DocumentSymbols(req *http.Request, params DocumentSymbolParams, result []SymbolInformation) error {
+func DocumentSymbols(req *http.Request, params *DocumentSymbolParams, result *[]SymbolInformation) error {
 	return nil
 }
 
@@ -499,7 +507,7 @@ type WorkplaceSymbolParams struct {
 	Query string
 }
 
-func WorkplaceSymbols(req *http.Request, params WorkplaceSymbolParams, result []SymbolInformation) error {
+func WorkplaceSymbols(req *http.Request, params *WorkplaceSymbolParams, result *[]SymbolInformation) error {
 	return nil
 }
 
@@ -534,7 +542,7 @@ type CodeActionParams struct {
 	Context CodeActionContext
 }
 
-func CodeAction(req *http.Request, params CodeActionParams, result []Command) error {
+func CodeAction(req *http.Request, params *CodeActionParams, result *[]Command) error {
 	return nil
 }
 
@@ -570,11 +578,11 @@ type CodeLens struct {
 	Data interface{}
 }
 
-func CodeLensRequest(req *http.Request, params CodeLensParams, result []Command) error {
+func CodeLensRequest(req *http.Request, params *CodeLensParams, result *[]Command) error {
 	return nil
 }
 
-func CodeLensResolve(req *http.Request, params CodeLens, result CodeLens) error {
+func CodeLensResolve(req *http.Request, params *CodeLens, result *CodeLens) error {
 	return nil
 }
 
@@ -610,11 +618,11 @@ type FormattingOptions struct {
 	Key string
 }
 
-func DocumentFormatting(req *http.Request, params DocumentFormattingParams, result []TextEdit) error {
+func DocumentFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error {
 	return nil
 }
 
-func DocumentOnTypeFormatting(req *http.Request, params DocumentFormattingParams, result []TextEdit) error {
+func DocumentOnTypeFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error {
 	return nil
 }
 
@@ -637,6 +645,6 @@ type RenameParams struct {
 	NewName string
 }
 
-func Rename(req *http.Request, params RenameParams, result WorkspaceEdit) error {
+func Rename(req *http.Request, params *RenameParams, result *WorkspaceEdit) error {
 	return nil
 }
