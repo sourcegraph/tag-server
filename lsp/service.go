@@ -1,43 +1,43 @@
 package lsp
 
-import "net/http"
-
 type LangSvc interface {
-	Initialize(req *http.Request, params *InitializeParams, result *InitializeResult) error
-	Completion(req *http.Request, params *TextDocumentPositionParams, result *CompletionList) error
-	CompletionItemResolve(req *http.Request, params *CompletionList, result *CompletionList) error
-	HoverRequest(req *http.Request, params *TextDocumentPositionParams, result *Hover) error
-	SignatureHelpRequest(req *http.Request, params *TextDocumentPositionParams, result *SignatureHelp) error
-	GoToDefinition(req *http.Request, params *TextDocumentPositionParams, result *[]Location) error
-	FindReferences(req *http.Request, params *ReferenceParams, result *[]Location) error
-	DocumentHighlights(req *http.Request, params *ReferenceParams, result *DocumentHighlight) error
-	DocumentSymbols(req *http.Request, params *DocumentSymbolParams, result *[]SymbolInformation) error
-	WorkplaceSymbols(req *http.Request, params *WorkplaceSymbolParams, result *[]SymbolInformation) error
-	CodeAction(req *http.Request, params *CodeActionParams, result *[]Command) error
-	CodeLensRequest(req *http.Request, params *CodeLensParams, result *[]Command) error
-	CodeLensResolve(req *http.Request, params *CodeLens, result *CodeLens) error
-	DocumentFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error
-	DocumentOnTypeFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error
-	Rename(req *http.Request, params *RenameParams, result *WorkspaceEdit) error
+	Initialize(params *InitializeParams, result *InitializeResult) error
+	Completion(params *TextDocumentPositionParams, result *CompletionList) error
+	CompletionItemResolve(params *CompletionList, result *CompletionList) error
+	HoverRequest(params *TextDocumentPositionParams, result *Hover) error
+	SignatureHelpRequest(params *TextDocumentPositionParams, result *SignatureHelp) error
+	GoToDefinition(params *TextDocumentPositionParams, result *[]Location) error
+	FindReferences(params *ReferenceParams, result *[]Location) error
+	DocumentHighlights(params *ReferenceParams, result *DocumentHighlight) error
+	DocumentSymbols(params *DocumentSymbolParams, result *[]SymbolInformation) error
+	WorkplaceSymbols(params *WorkplaceSymbolParams, result *[]SymbolInformation) error
+	CodeAction(params *CodeActionParams, result *[]Command) error
+	CodeLensRequest(params *CodeLensParams, result *[]Command) error
+	CodeLensResolve(params *CodeLens, result *CodeLens) error
+	DocumentFormatting(params *DocumentFormattingParams, result *[]TextEdit) error
+	DocumentOnTypeFormatting(params *DocumentFormattingParams, result *[]TextEdit) error
+	Rename(params *RenameParams, result *WorkspaceEdit) error
 }
+
+type None struct{}
 
 type InitializeParams struct {
 	/**
 	 * The process Id of the parent process that started
 	 * the server.
 	 */
-	ProcessId int
+	ProcessID int `json:"processId"`
 
 	/**
 	 * The rootPath of the workspace. Is null
 	 * if no folder is open.
 	 */
-	RootPath string
+	RootPath string `json:"rootPath"`
 
 	/**
 	 * The capabilities provided by the client (editor)
 	 */
-	Capabilities ClientCapabilities
+	Capabilities ClientCapabilities `json:"capabilities"`
 }
 
 type ClientCapabilities struct{}
@@ -46,7 +46,7 @@ type InitializeResult struct {
 	/**
 	 * The capabilities the language server provides.
 	 */
-	Capabilities ServerCapabilities
+	Capabilities ServerCapabilities `json:"capabilities"`
 }
 
 type InitializeError struct {
@@ -55,94 +55,90 @@ type InitializeError struct {
 	 * initilize request after showing the message provided
 	 * in the ResponseError.
 	 */
-	Retry bool
-}
-
-func Initialize(req *http.Request, params *InitializeParams, result *InitializeResult) error {
-	return nil
+	Retry bool `json:"retry"`
 }
 
 type TextDocumentSyncKind int
 
 const (
 	/**
-	* Defines how the host (editor) should sync document changes to the language server.
+	 * Defines how the host (editor) should sync document changes to the language server.
 	 */
-	None TextDocumentSyncKind = 0
+	TDSKNone TextDocumentSyncKind = 0
 
 	/**
 	 * Documents are synced by always sending the full content of the document.
 	 */
-	Full = 1
+	TDSKFull = 1
 
 	/**
 	 * Documents are synced by sending the full content on open. After that only incremental
 	 * updates to the document are sent.
 	 */
-	Incremental = 2
+	TDSKIncremental = 2
 )
 
 type ServerCapabilities struct {
 	/**
 	 * Defines how text documents are synced.
 	 */
-	TextDocumentSync int32
+	TextDocumentSync int32 `json:"textDocumentSync,omitempty"`
 	/**
 	 * The server provides hover support.
 	 */
-	HoverProvider bool
+	HoverProvider bool `json:"hoverProvider,omitempty"`
 	/**
 	 * The server provides completion support.
 	 */
-	CompletionProvider CompletionOptions
+	CompletionProvider CompletionOptions `json:"completionProvider,omitempty"`
 	/**
 	 * The server provides signature help support.
 	 */
-	SignatureHelpProvider SignatureHelpOptions
+	SignatureHelpProvider SignatureHelpOptions `json:"signatureHelpProvider,omitempty"`
 	/**
 	 * The server provides goto definition support.
 	 */
-	DefinitionProvider bool
+	DefinitionProvider bool `json:"definitionProvider,omitempty"`
 	/**
 	 * The server provides find references support.
 	 */
-	ReferencesProvider bool
+	ReferencesProvider bool `json:"referencesProvider,omitempty"`
 	/**
 	 * The server provides document highlight support.
 	 */
-	DocumentHighlightProvider bool
+	DocumentHighlightProvider bool `json:"documentHighlightProvider,omitempty"`
 	/**
 	 * The server provides document symbol support.
 	 */
-	DocumentSymbolProvider bool
+	DocumentSymbolProvider bool `json:"documentSymbolProvider,omitempty"`
 	/**
 	 * The server provides workspace symbol support.
 	 */
-	WorkspaceSymbolProvider bool
+	WorkspaceSymbolProvider bool `json:"workspaceSymbolProvider,omitempty"`
 	/**
 	 * The server provides code actions.
 	 */
-	CodeActionProvider bool
+	CodeActionProvider bool `json:"codeActionProvider,omitempty"`
 	/**
 	 * The server provides code lens.
 	 */
-	CodeLensProvider CodeLensOptions
+	CodeLensProvider CodeLensOptions `json:"codeLensProvider,omitempty"`
 	/**
 	 * The server provides document formatting.
 	 */
-	DocumentFormattingProvider bool
+	DocumentFormattingProvider bool `json:"documentFormattingProvider,omitempty"`
 	/**
 	 * The server provides document range formatting.
 	 */
-	DocumentRangeFormattingProvider bool
+	DocumentRangeFormattingProvider bool `json:"documentRangeFormattingProvider,omitempty"`
 	/**
 	 * The server provides document formatting on typing.
 	 */
-	DocumentOnTypeFormattingProvider DocumentOnTypeFormattingOptions
+	DocumentOnTypeFormattingProvider DocumentOnTypeFormattingOptions `json:"documentOnTypeFormattingProvider,omitempty"`
 	/**
 	 * The server provides rename support.
 	 */
-	RenameProvider bool
+	RenameProvider bool `json:"renameProvider,omitempty"`
 }
 
 /**
@@ -152,12 +148,12 @@ type CompletionOptions struct {
 	/**
 	 * The server provides support to resolve additional information for a completion item.
 	 */
-	ResolveProvider bool
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
 
 	/**
 	 * The characters that trigger completion automatically.
 	 */
-	TriggerCharacters []string
+	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
 }
 
 /**
@@ -167,46 +163,46 @@ type DocumentOnTypeFormattingOptions struct {
 	/**
 	 * A character on which formatting should be triggered, like `}`.
 	 */
-	FirstTriggerCharacter string
+	FirstTriggerCharacter string `json:"firstTriggerCharacter"`
 
 	/**
 	 * More trigger characters.
 	 */
-	MoreTriggerCharacter []string
+	MoreTriggerCharacter []string `json:"moreTriggerCharacter,omitempty"`
 }
 
 type CodeLensOptions struct {
 	/**
 	 * Code lens has a resolve provider as well.
 	 */
-	ResolveProvider bool
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
 }
 
 type SignatureHelpOptions struct {
-	TriggerCharacters []string
+	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
 }
 
 type CompletionItemKind int
 
 const (
-	CIKText     CompletionItemKind = 1
-	Method                         = 2
-	Function                       = 3
-	Constructor                    = 4
-	Field                          = 5
-	Variable                       = 6
-	Class                          = 7
-	Interface                      = 8
-	Module                         = 9
-	Property                       = 10
-	Unit                           = 11
-	Value                          = 12
-	Enum                           = 13
-	Keyword                        = 14
-	Snippet                        = 15
-	Color                          = 16
-	File                           = 17
-	Reference                      = 18
+	CIKText        CompletionItemKind = 1
+	CIKMethod                         = 2
+	CIKFunction                       = 3
+	CIKConstructor                    = 4
+	CIKField                          = 5
+	CIKVariable                       = 6
+	CIKClass                          = 7
+	CIKInterface                      = 8
+	CIKModule                         = 9
+	CIKProperty                       = 10
+	CIKUnit                           = 11
+	CIKValue                          = 12
+	CIKEnum                           = 13
+	CIKKeyword                        = 14
+	CIKSnippet                        = 15
+	CIKColor                          = 16
+	CIKFile                           = 17
+	CIKReference                      = 18
 )
 
 type CompletionItem struct {
@@ -215,47 +211,47 @@ type CompletionItem struct {
 	 * also the text that is inserted when selecting
 	 * this completion.
 	 */
-	Label string
+	Label string `json:"label"`
 	/**
 	 * The kind of this completion item. Based of the kind
 	 * an icon is chosen by the editor.
 	 */
-	Kind int32
+	Kind int32 `json:"kind,omitempty"`
 	/**
 	 * A human-readable string with additional information
 	 * about this item, like type or symbol information.
 	 */
-	Detail string
+	Detail string `json:"detail,omitempty"`
 	/**
 	 * A human-readable string that represents a doc-comment.
 	 */
-	Documentation string
+	Documentation string `json:"documentation,omitempty"`
 	/**
 	 * A string that shoud be used when comparing this item
 	 * with other items. When `falsy` the label is used.
 	 */
-	SortText string
+	SortText string `json:"sortText,omitempty"`
 	/**
 	 * A string that should be used when filtering a set of
 	 * completion items. When `falsy` the label is used.
 	 */
-	FilterText string
+	FilterText string `json:"filterText,omitempty"`
 	/**
 	 * A string that should be inserted a document when selecting
 	 * this completion. When `falsy` the label is used.
 	 */
-	InsertText string
+	InsertText string `json:"insertText,omitempty"`
 	/**
 	 * An edit which is applied to a document when selecting
 	 * this completion. When an edit is provided the value of
 	 * insertText is ignored.
 	 */
-	TextEdit TextEdit
+	TextEdit TextEdit `json:"textEdit,omitempty"`
 	/**
 	 * An data entry field that is preserved on a completion item between
 	 * a completion and a completion resolve request.
 	 */
-	Data interface{}
+	Data interface{} `json:"data,omitempty"`
 }
 
 /**
@@ -267,42 +263,30 @@ type CompletionList struct {
 	 * This list it not complete. Further typing should result in recomputing
 	 * this list.
 	 */
-	IsIncomplete bool
+	IsIncomplete bool `json:"isIncomplete"`
 
 	/**
 	 * The completion items.
 	 */
-	Items []CompletionItem
-}
-
-func Completion(req *http.Request, params *TextDocumentPositionParams, result *CompletionList) error {
-	return nil
-}
-
-func CompletionItemResolve(req *http.Request, params *CompletionList, result *CompletionList) error {
-	return nil
+	Items []CompletionItem `json:"items"`
 }
 
 type Hover struct {
 	/**
 	 * The hover's content
 	 */
-	Contents []MarkedString
+	Contents []MarkedString `json:"contents,omitempty"`
 
 	/**
 	 * An optional range
 	 */
-	Range Range
+	Range Range `json:"range"`
 }
 
 type MarkedString struct {
 	Language string
 
 	Value string
-}
-
-func HoverRequest(req *http.Request, params *TextDocumentPositionParams, result *Hover) error {
-	return nil
 }
 
 /**
@@ -314,17 +298,17 @@ type SignatureHelp struct {
 	/**
 	 * One or more signatures.
 	 */
-	Signatures []SignatureInformation
+	Signatures []SignatureInformation `json:"signatures"`
 
 	/**
 	 * The active signature.
 	 */
-	ActiveSignature int32
+	ActiveSignature int32 `json:"activeSignature,omitempty"`
 
 	/**
 	 * The active parameter of the active signature.
 	 */
-	ActiveParameter int32
+	ActiveParameter int32 `json:"activeParameter,omitempty"`
 }
 
 /**
@@ -337,18 +321,18 @@ type SignatureInformation struct {
 	 * The label of this signature. Will be shown in
 	 * the UI.
 	 */
-	Label string
+	Label string `json:"label"`
 
 	/**
 	 * The human-readable doc-comment of this signature. Will be shown
 	 * in the UI but can be omitted.
 	 */
-	Documentation string
+	Documentation string `json:"documentation,omitempty"`
 
 	/**
 	 * The parameters of this signature.
 	 */
-	Paramaters []ParameterInformation
+	Paramaters []ParameterInformation `json:"paramaters,omitempty"`
 }
 
 /**
@@ -360,38 +344,26 @@ type ParameterInformation struct {
 	 * The label of this signature. Will be shown in
 	 * the UI.
 	 */
-	Label string
+	Label string `json:"label"`
 
 	/**
 	 * The human-readable doc-comment of this signature. Will be shown
 	 * in the UI but can be omitted.
 	 */
-	Documentation string
-}
-
-func SignatureHelpRequest(req *http.Request, params *TextDocumentPositionParams, result *SignatureHelp) error {
-	return nil
-}
-
-func GoToDefinition(req *http.Request, params *TextDocumentPositionParams, result *[]Location) error {
-	return nil
+	Documentation string `json:"documentation,omitempty"`
 }
 
 type ReferenceContext struct {
 	/**
 	 * Include the declaration of the current symbol.
 	 */
-	IncludeDeclaration bool
+	IncludeDeclaration bool `json:"IncludeDeclaration"`
 }
 
 type ReferenceParams struct {
 	TextDocumentPositionParams
 
-	Context ReferenceContext
-}
-
-func FindReferences(req *http.Request, params *ReferenceParams, result *[]Location) error {
-	return nil
+	Context ReferenceContext `json:"context"`
 }
 
 /**
@@ -425,23 +397,19 @@ type DocumentHighlight struct {
 	/**
 	 * The range this highlight applies to.
 	 */
-	Range Range
+	Range Range `json:"range"`
 
 	/**
 	 * The highlight kind, default is DocumentHighlightKind.Text.
 	 */
-	Kind int32
-}
-
-func DocumentHighlights(req *http.Request, params *ReferenceParams, result *DocumentHighlight) error {
-	return nil
+	Kind int32 `json:"kind,omitempty"`
 }
 
 type DocumentSymbolParams struct {
 	/**
 	 * The text document.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 }
 
 type SymbolKind int
@@ -475,26 +443,22 @@ type SymbolInformation struct {
 	/**
 	 * The name of this symbol.
 	 */
-	Name string
+	Name string `json:"name"`
 
 	/**
 	 * The kind of this symbol.
 	 */
-	Kind int32
+	Kind int32 `json:"kind"`
 
 	/**
 	 * The location of this symbol.
 	 */
-	Location Location
+	Location Location `json:"location"`
 
 	/**
 	 * The name of the symbol containing this symbol.
 	 */
-	ContainerName string
-}
-
-func DocumentSymbols(req *http.Request, params *DocumentSymbolParams, result *[]SymbolInformation) error {
-	return nil
+	ContainerName string `json:"containerName,omitempty"`
 }
 
 /**
@@ -504,11 +468,7 @@ type WorkplaceSymbolParams struct {
 	/**
 	 * A non-empty query string
 	 */
-	Query string
-}
-
-func WorkplaceSymbols(req *http.Request, params *WorkplaceSymbolParams, result *[]SymbolInformation) error {
-	return nil
+	Query string `json:"query"`
 }
 
 /**
@@ -519,7 +479,7 @@ type CodeActionContext struct {
 	/**
 	 * An array of diagnostics.
 	 */
-	Diagnostics []Diagnostic
+	Diagnostics []Diagnostic `json:"diagnostics"`
 }
 
 /**
@@ -529,28 +489,24 @@ type CodeActionParams struct {
 	/**
 	 * The document in which the command was invoked.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 
 	/**
 	 * The range for which the command was invoked.
 	 */
-	Range Range
+	Range Range `json:"range"`
 
 	/**
 	 * Context carrying additional information.
 	 */
-	Context CodeActionContext
-}
-
-func CodeAction(req *http.Request, params *CodeActionParams, result *[]Command) error {
-	return nil
+	Context CodeActionContext `json:"context"`
 }
 
 type CodeLensParams struct {
 	/**
 	 * The document to request code lens for.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 }
 
 /**
@@ -564,38 +520,30 @@ type CodeLens struct {
 	/**
 	 * The range in which this code lens is valid. Should only span a single line.
 	 */
-	Range Range
+	Range Range `json:"range"`
 
 	/**
 	 * The command this code lens represents.
 	 */
-	Command Command
+	Command Command `json:"command,omitempty"`
 
 	/**
 	 * A data entry field that is preserved on a code lens item between
 	 * a code lens and a code lens resolve request.
 	 */
-	Data interface{}
-}
-
-func CodeLensRequest(req *http.Request, params *CodeLensParams, result *[]Command) error {
-	return nil
-}
-
-func CodeLensResolve(req *http.Request, params *CodeLens, result *CodeLens) error {
-	return nil
+	Data interface{} `json:"data,omitempty"`
 }
 
 type DocumentFormattingParams struct {
 	/**
 	 * The document to format.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 
 	/**
 	 * The format options.
 	 */
-	Options FormattingOptions
+	Options FormattingOptions `json:"options"`
 }
 
 /**
@@ -605,46 +553,34 @@ type FormattingOptions struct {
 	/**
 	 * Size of a tab in spaces.
 	 */
-	TabSize int32
+	TabSize int32 `json:"tabSize"`
 
 	/**
 	 * Prefer spaces over tabs.
 	 */
-	InsertSpaces bool
+	InsertSpaces bool `json:"insertSpaces"`
 
 	/**
 	* Signature for further properites
 	 */
-	Key string
-}
-
-func DocumentFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error {
-	return nil
-}
-
-func DocumentOnTypeFormatting(req *http.Request, params *DocumentFormattingParams, result *[]TextEdit) error {
-	return nil
+	Key string `json:"key"`
 }
 
 type RenameParams struct {
 	/**
 	 * The document to format.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 
 	/**
 	 * The position at which this request was sent.
 	 */
-	Position Position
+	Position Position `json:"position"`
 
 	/**
 	 * The new name of the symbol. If the given name is not valid the
 	 * request must return a [ResponseError](#ResponseError) with an
 	 * appropriate message set.
 	 */
-	NewName string
-}
-
-func Rename(req *http.Request, params *RenameParams, result *WorkspaceEdit) error {
-	return nil
+	NewName string `json:"newName"`
 }
