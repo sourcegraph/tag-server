@@ -10,6 +10,13 @@ type langSvc struct{}
 
 func (s *langSvc) Initialize(params *lsp.InitializeParams, result *lsp.InitializeResult) error {
 	log.Printf("langSvc.Initialize(%+v)", params)
+	// vfsURL, err := url.Parse(params.RootPath)
+	// if err != nil {
+	// 	return fmt.Errorf("Could not parse VFS URL: %s", err)
+	// }
+
+	// vfsURL := "http://localhost:7979"
+
 	return nil
 }
 func (s *langSvc) Completion(params *lsp.TextDocumentPositionParams, result *lsp.CompletionList) error {
@@ -25,6 +32,7 @@ func (s *langSvc) SignatureHelpRequest(params *lsp.TextDocumentPositionParams, r
 	return nil
 }
 func (s *langSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result *[]lsp.Location) error {
+	// TODO
 	return nil
 }
 func (s *langSvc) FindReferences(params *lsp.ReferenceParams, result *[]lsp.Location) error {
@@ -34,6 +42,7 @@ func (s *langSvc) DocumentHighlights(params *lsp.ReferenceParams, result *lsp.Do
 	return nil
 }
 func (s *langSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]lsp.SymbolInformation) error {
+	// TODO
 	return nil
 }
 func (s *langSvc) WorkplaceSymbols(params *lsp.WorkplaceSymbolParams, result *[]lsp.SymbolInformation) error {
