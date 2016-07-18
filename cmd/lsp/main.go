@@ -93,7 +93,12 @@ type codecReq struct {
 
 func (r *codecReq) Method() (string, error) {
 	method, err := r.CodecRequest.Method()
-	method = fmt.Sprintf("lsp.%s", capitalize(method))
+	switch method {
+	case "textDocument/hover":
+		method = "lsp.HoverRequest"
+	default:
+		method = fmt.Sprintf("lsp.%s", capitalize(method))
+	}
 	return method, err
 }
 

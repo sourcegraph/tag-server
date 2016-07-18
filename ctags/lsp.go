@@ -26,6 +26,7 @@ func (s *LangSvc) CompletionItemResolve(params *lsp.CompletionList, result *lsp.
 	return nil
 }
 func (s *LangSvc) HoverRequest(params *lsp.TextDocumentPositionParams, result *lsp.Hover) error {
+	result.Contents = []lsp.MarkedString{{Language: "markdown", Value: "Hello CTags!"}}
 	return nil
 }
 func (s *LangSvc) SignatureHelpRequest(params *lsp.TextDocumentPositionParams, result *lsp.SignatureHelp) error {
