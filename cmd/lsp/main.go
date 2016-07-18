@@ -153,14 +153,8 @@ func (c *stdCodec) ReadRequestHeader(rpcReq *rpc.Request) error {
 	}
 	rpcReq.ServiceMethod = req.Method
 	rpcReq.Seq = req.Id
+	rpcReq.ServiceMethod = lspMethodToRPCEndpoint(rpcReq.ServiceMethod)
 	c.req = &req
-
-	switch rpcReq.ServiceMethod {
-	case "textDocument/hover":
-		rpcReq.ServiceMethod = "lsp.HoverRequest"
-	default:
-		rpcReq.ServiceMethod = fmt.Sprintf("lsp.%s", capitalize(rpcReq.ServiceMethod))
-	}
 
 	return nil
 }
@@ -213,13 +207,7 @@ type codecReq struct {
 
 func (r *codecReq) Method() (string, error) {
 	method, err := r.CodecRequest.Method()
-	switch method {
-	case "textDocument/hover":
-		method = "lsp.HoverRequest"
-	default:
-		method = fmt.Sprintf("lsp.%s", capitalize(method))
-	}
-	return method, err
+	return lspMethodToRPCEndpoint(method), err
 }
 
 func (r *codecReq) ReadRequest(v interface{}) error {
@@ -241,4 +229,13 @@ func capitalize(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[0:1]) + s[1:]
+}
+
+func lspMethodToRPCEndpoint(method string) string {
+	switch method {
+	case "textDocument/hover":
+		return "lsp.HoverRequest"
+	default:
+		return fmt.Sprintf("lsp.%s", capitalize(method))
+	}
 }
