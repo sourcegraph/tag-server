@@ -4,58 +4,58 @@ type Position struct {
 	/**
 	 * Line position in a document (zero-based).
 	 */
-	Line int
+	Line int `json:"line"`
 
 	/**
 	 * Character offset on a line in a document (zero-based).
 	 */
-	Character int
+	Character int `json:"character"`
 }
 
 type Range struct {
 	/**
 	 * The range's start position.
 	 */
-	Start Position
+	Start Position `json:"start"`
 
 	/**
 	 * The range's end position.
 	 */
-	End Position
+	End Position `json:"end"`
 }
 
 type Location struct {
-	URI   string
-	Range Range
+	URI   string `json:"uri"`
+	Range Range  `json:"range"`
 }
 
 type Diagnostic struct {
 	/**
 	 * The range at which the message applies.
 	 */
-	Range Range
+	Range Range `json:"range"`
 
 	/**
 	 * The diagnostic's severity. Can be omitted. If omitted it is up to the
 	 * client to interpret diagnostics as error, warning, info or hint.
 	 */
-	Severity int
+	Severity int `json:"severity"`
 
 	/**
 	 * The diagnostic's code. Can be omitted.
 	 */
-	Code string
+	Code string `json:"code"`
 
 	/**
 	 * A human-readable string describing the source of this
 	 * diagnostic, e.g. 'typescript' or 'super lint'.
 	 */
-	Source string
+	Source string `json:"source"`
 
 	/**
 	 * The diagnostic's message.
 	 */
-	Message string
+	Message string `json:"message"`
 }
 
 type DiagnosticSeverity int
@@ -71,16 +71,16 @@ type Command struct {
 	/**
 	 * Title of the command, like `save`.
 	 */
-	Title string
+	Title string `json:"title"`
 	/**
 	 * The identifier of the actual command handler.
 	 */
-	Command string
+	Command string `json:"command"`
 	/**
 	 * Arguments that the command handler should be
 	 * invoked with.
 	 */
-	Arguments []interface{}
+	Arguments []interface{} `json:"arguments"`
 }
 
 type TextEdit struct {
@@ -88,50 +88,50 @@ type TextEdit struct {
 	 * The range of the text document to be manipulated. To insert
 	 * text into a document create a range where start === end.
 	 */
-	Range Range
+	Range Range `json:"range"`
 
 	/**
 	 * The string to be inserted. For delete operations use an
 	 * empty string.
 	 */
-	NewText string
+	NewText string `json:"newText"`
 }
 
 type WorkspaceEdit struct {
 	/**
 	 * Holds changes to existing resources.
 	 */
-	Changes map[string][]TextEdit
+	Changes map[string][]TextEdit `json:"changes"`
 }
 
 type TextDocumentIdentifier struct {
 	/**
 	 * The text document's URI.
 	 */
-	URI string
+	URI string `json:"uri"`
 }
 
 type TextDocumentItem struct {
 	/**
 	 * The text document's URI.
 	 */
-	URI string
+	URI string `json:"url"`
 
 	/**
 	 * The text document's language identifier.
 	 */
-	LanguageID string
+	LanguageID string `json:"languageID"`
 
 	/**
 	 * The version number of this document (it will strictly increase after each
 	 * change, including undo/redo).
 	 */
-	Version int
+	Version int `json:"version"`
 
 	/**
 	 * The content of the opened text document.
 	 */
-	Text string
+	Text string `json:"text"`
 }
 
 type VersionedTextDocumentIdentifier struct {
@@ -139,17 +139,17 @@ type VersionedTextDocumentIdentifier struct {
 	/**
 	 * The version number of this document.
 	 */
-	Version int
+	Version int `json:"version"`
 }
 
 type TextDocumentPositionParams struct {
 	/**
 	 * The text document.
 	 */
-	TextDocument TextDocumentIdentifier
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 
 	/**
 	 * The position inside the text document.
 	 */
-	Position Position
+	Position Position `json:"position"`
 }
