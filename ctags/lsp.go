@@ -29,7 +29,7 @@ func (s *LangSvc) Completion(params *lsp.TextDocumentPositionParams, result *lsp
 func (s *LangSvc) CompletionItemResolve(params *lsp.CompletionList, result *lsp.CompletionList) error {
 	return nil
 }
-func (s *LangSvc) HoverRequest(params *lsp.TextDocumentPositionParams, result *lsp.Hover) error {
+func (s *LangSvc) Hover(params *lsp.TextDocumentPositionParams, result *lsp.Hover) error {
 	result.Contents = []lsp.MarkedString{{Language: "markdown", Value: "Hello CTags!"}}
 	return nil
 }
@@ -40,7 +40,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 	// TODO
 	return nil
 }
-func (s *LangSvc) FindReferences(params *lsp.ReferenceParams, result *[]lsp.Location) error {
+func (s *LangSvc) References(params *lsp.ReferenceParams, result *[]lsp.Location) error {
 	return nil
 }
 func (s *LangSvc) DocumentHighlights(params *lsp.ReferenceParams, result *lsp.DocumentHighlight) error {

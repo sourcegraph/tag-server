@@ -232,10 +232,9 @@ func capitalize(s string) string {
 }
 
 func lspMethodToRPCEndpoint(method string) string {
-	switch method {
-	case "textDocument/hover":
-		return "lsp.HoverRequest"
-	default:
-		return fmt.Sprintf("lsp.%s", capitalize(method))
+	if strings.HasPrefix(method, "textDocument/") {
+		method = method[len("textDocument/"):]
 	}
+	method = fmt.Sprintf("lsp.%s", capitalize(method))
+	return method
 }

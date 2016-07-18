@@ -4,10 +4,10 @@ type LangSvc interface {
 	Initialize(params *InitializeParams, result *InitializeResult) error
 	Completion(params *TextDocumentPositionParams, result *CompletionList) error
 	CompletionItemResolve(params *CompletionList, result *CompletionList) error
-	HoverRequest(params *TextDocumentPositionParams, result *Hover) error
+	Hover(params *TextDocumentPositionParams, result *Hover) error
 	SignatureHelpRequest(params *TextDocumentPositionParams, result *SignatureHelp) error
 	GoToDefinition(params *TextDocumentPositionParams, result *[]Location) error
-	FindReferences(params *ReferenceParams, result *[]Location) error
+	References(params *ReferenceParams, result *[]Location) error
 	DocumentHighlights(params *ReferenceParams, result *DocumentHighlight) error
 	DocumentSymbols(params *DocumentSymbolParams, result *[]SymbolInformation) error
 	WorkplaceSymbols(params *WorkplaceSymbolParams, result *[]SymbolInformation) error

@@ -22,8 +22,8 @@ func (s *HTTPLangService) CompletionItemResolve(req *http.Request, params *Compl
 	return s.svc.CompletionItemResolve(params, result)
 }
 
-func (s *HTTPLangService) HoverRequest(req *http.Request, params *TextDocumentPositionParams, result *Hover) error {
-	return s.svc.HoverRequest(params, result)
+func (s *HTTPLangService) Hover(req *http.Request, params *TextDocumentPositionParams, result *Hover) error {
+	return s.svc.Hover(params, result)
 }
 
 func (s *HTTPLangService) SignatureHelpRequest(req *http.Request, params *TextDocumentPositionParams, result *SignatureHelp) error {
@@ -34,8 +34,8 @@ func (s *HTTPLangService) GoToDefinition(req *http.Request, params *TextDocument
 	return s.svc.GoToDefinition(params, result)
 }
 
-func (s *HTTPLangService) FindReferences(req *http.Request, params *ReferenceParams, result *[]Location) error {
-	return s.svc.FindReferences(params, result)
+func (s *HTTPLangService) References(req *http.Request, params *ReferenceParams, result *[]Location) error {
+	return s.svc.References(params, result)
 }
 
 func (s *HTTPLangService) DocumentHighlights(req *http.Request, params *ReferenceParams, result *DocumentHighlight) error {
