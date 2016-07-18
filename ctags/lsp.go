@@ -3,22 +3,24 @@ package ctags
 import (
 	"log"
 
-	"github.com/sourcegraph/tag-server/lsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
-type LangSvc struct{}
+type LangSvc struct {
+	RootPath string
+}
+
+var Server = &LangSvc{}
 
 func (s *LangSvc) Initialize(params *lsp.InitializeParams, result *lsp.InitializeResult) error {
 	log.Printf("LangSvc.Initialize(%+v)", params)
-	// vfsURL, err := url.Parse(params.RootPath)
-	// if err != nil {
-	// 	return fmt.Errorf("Could not parse VFS URL: %s", err)
-	// }
-
-	// vfsURL := "http://localhost:7979"
-
+	log.Printf("root path: %q", params.RootPath)
+	s.RootPath = params.RootPath
 	result.Capabilities = lsp.ServerCapabilities{
-		HoverProvider: true,
+		HoverProvider:          true,
+		DocumentSymbolProvider: true,
+		DefinitionProvider:     true,
+		ReferencesProvider:     true,
 	}
 
 	return nil
@@ -70,10 +72,4 @@ func (s *LangSvc) DocumentOnTypeFormatting(params *lsp.DocumentFormattingParams,
 }
 func (s *LangSvc) Rename(params *lsp.RenameParams, result *lsp.WorkspaceEdit) error {
 	return nil
-}
-
-var _ lsp.LangSvc = (*LangSvc)(nil)
-
-func NewLangService() lsp.LangSvc {
-	return &LangSvc{}
 }
