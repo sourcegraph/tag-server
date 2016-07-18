@@ -17,6 +17,10 @@ func (s *LangSvc) Initialize(params *lsp.InitializeParams, result *lsp.Initializ
 
 	// vfsURL := "http://localhost:7979"
 
+	result.Capabilities = lsp.ServerCapabilities{
+		HoverProvider: true,
+	}
+
 	return nil
 }
 func (s *LangSvc) Completion(params *lsp.TextDocumentPositionParams, result *lsp.CompletionList) error {

@@ -284,9 +284,9 @@ type Hover struct {
 }
 
 type MarkedString struct {
-	Language string
+	Language string `json:"language"`
 
-	Value string
+	Value string `json:"value"`
 }
 
 /**
