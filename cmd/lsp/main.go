@@ -96,19 +96,29 @@ func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
 				End:   lsp.Position{Line: pos.Line, Character: pos.Character + 3},
 			},
 		})
+
+	case "textDocument/documentSymbol":
+		var params lsp.DocumentSymbolParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
+			return
+		}
+
+		var res []lsp.SymbolInformation
+		ctags.Server.DocumentSymbols(&params, &res)
+		resp.SetResult(res)
+
 	case "textDocument/definition":
 		var params lsp.TextDocumentPositionParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
 			return
 		}
-		resp.SetResult(lsp.Location{
-			URI: params.TextDocument.URI,
-			Range: lsp.Range{
-				Start: lsp.Position{Line: 0, Character: 0},
-				End:   lsp.Position{Line: 0, Character: 0},
-			},
-		})
+
+		var res []lsp.Location
+		ctags.Server.GoToDefinition(&params, &res)
+		resp.SetResult(res)
+
 	case "textDocument/references":
 		var params lsp.ReferenceParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
@@ -128,6 +138,9 @@ func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
 				End:   lsp.Position{Line: 0, Character: 6},
 			},
 		}})
+
+	default:
+		log.Printf("! Unrecognized RPC call: %s", req.Method)
 	}
 
 	return
