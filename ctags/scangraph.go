@@ -12,7 +12,7 @@ import (
 )
 
 func Graph(files []string) (*Output, error) {
-	p, err := parse(files)
+	p, err := Parse(files)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func Graph(files []string) (*Output, error) {
 }
 
 func Scan() ([]*unit.SourceUnit, error) {
-	p, err := parse(nil)
+	p, err := Parse(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func Scan() ([]*unit.SourceUnit, error) {
 
 var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor"}
 
-func parse(files []string) (*ETagsParser, error) {
+func Parse(files []string) (*ETagsParser, error) {
 	const tagsFilename = "tags"
 	args := []string{"-e", "-f", tagsFilename}
 	if len(files) == 0 {

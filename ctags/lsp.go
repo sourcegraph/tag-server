@@ -64,24 +64,25 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 		return err
 	}
 
-	out, err := Graph([]string{docURL.Path})
+	parser, err := Parse([]string{docURL.Path})
 	if err != nil {
 		return err
 	}
+	tags := parser.Tags()
 
-	res := make([]lsp.SymbolInformation, len(out.Defs))
-	for i, def := range out.Defs {
-		res[i] = lsp.SymbolInformation{
-			Name: def.Name,
+	res := make([]lsp.SymbolInformation, 0, len(tags))
+	for _, tag := range tags {
+		res = append(res, lsp.SymbolInformation{
+			Name: tag.Name,
 			Kind: lsp.SKMethod, // TODO
 			Location: lsp.Location{ // TODO
-				URI: "bar.js",
+				URI: docURL.String(),
 				Range: lsp.Range{
-					Start: lsp.Position{Line: 0, Character: 0},
-					End:   lsp.Position{Line: 0, Character: 0},
+					Start: lsp.Position{Line: tag.Line, Character: 0},
+					End:   lsp.Position{Line: tag.Line, Character: 0},
 				},
 			},
-		}
+		})
 	}
 	*result = res
 	return nil
