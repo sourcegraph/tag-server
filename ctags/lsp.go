@@ -198,8 +198,8 @@ func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
 func extractTokenFromPosition(file string, l int, c int) (token string, loc lsp.Range) {
 	lines := strings.Split(file, "\n")
 	line := lines[l]
-	start := strings.LastIndexAny(line[:c], " \r\n\t()\"'.,*-") + 1
-	end := strings.IndexAny(line[c:], " \r\n\t()\"'.,*-")
+	start := strings.LastIndexAny(line[:c], " \r\n\t()\"'.,*-<>") + 1
+	end := strings.IndexAny(line[c:], " \r\n\t()\"'.,*-<>")
 	if end == -1 {
 		end = len(line)
 	} else {
