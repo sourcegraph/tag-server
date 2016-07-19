@@ -3,6 +3,7 @@ package ctags
 import (
 	"log"
 	"net/url"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -72,14 +73,15 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
+		nameIdx := strings.Index(tag.Def, tag.Name)
 		res = append(res, lsp.SymbolInformation{
 			Name: tag.Name,
 			Kind: lsp.SKMethod, // TODO
-			Location: lsp.Location{ // TODO
+			Location: lsp.Location{
 				URI: docURL.String(),
 				Range: lsp.Range{
-					Start: lsp.Position{Line: tag.Line, Character: 0},
-					End:   lsp.Position{Line: tag.Line, Character: 0},
+					Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
+					End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
 				},
 			},
 		})
