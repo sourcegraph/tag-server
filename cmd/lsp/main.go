@@ -66,6 +66,12 @@ func run() error {
 type handler struct{}
 
 func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("!!! PANIC recovered in Handle: %v", r)
+		}
+	}()
+
 	if req.IDSet {
 		resp = new(jsonrpc2.Response)
 	}
@@ -125,19 +131,9 @@ func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
 			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
 			return
 		}
-		resp.SetResult([]lsp.Location{lsp.Location{
-			URI: params.TextDocument.URI,
-			Range: lsp.Range{
-				Start: lsp.Position{Line: 0, Character: 0},
-				End:   lsp.Position{Line: 0, Character: 3},
-			},
-		}, lsp.Location{
-			URI: params.TextDocument.URI,
-			Range: lsp.Range{
-				Start: lsp.Position{Line: 0, Character: 4},
-				End:   lsp.Position{Line: 0, Character: 6},
-			},
-		}})
+		var res []lsp.Location
+		ctags.Server.References(&params, &res)
+		resp.SetResult(res)
 
 	default:
 		log.Printf("! Unrecognized RPC call: %s", req.Method)

@@ -1,8 +1,10 @@
 package ctags
 
 import (
+	"io/ioutil"
 	"log"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
@@ -43,17 +45,65 @@ func (s *LangSvc) SignatureHelpRequest(params *lsp.TextDocumentPositionParams, r
 func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result *[]lsp.Location) error {
 	log.Printf("GoToDefinition(%+v)", params)
 
-	*result = []lsp.Location{{
-		URI: params.TextDocument.URI,
-		Range: lsp.Range{
-			Start: lsp.Position{Line: 0, Character: 1},
-			End:   lsp.Position{Line: 0, Character: 1},
-		},
-	}}
+	docURL, err := url.Parse(params.TextDocument.URI)
+	if err != nil {
+		return err
+	}
+	b, err := ioutil.ReadFile(docURL.Path)
+	if err != nil {
+		return err
+	}
+	file := string(b)
+	lines := strings.Split(file, "\n")
+	line := lines[params.Position.Line]
+	start := strings.LastIndexAny(line[:params.Position.Character], " \r\n\t()\"'.,*-") + 1
+	end := strings.IndexAny(line[params.Position.Character:], " \r\n\t()\"'.,*-")
+	if end == -1 {
+		end = len(line)
+	} else {
+		end += params.Position.Character
+	}
+	token := line[start:end] // This is the token to search for
 
+	log.Printf("search around for token %q", token)
+
+	var matchedTags []Tag
+	{
+		searchDir := filepath.Dir(docURL.Path)
+		dirfiles, err := ioutil.ReadDir(searchDir)
+		if err != nil {
+			return err
+		}
+		for _, file := range dirfiles {
+			if file.IsDir() {
+				continue
+			}
+			parser, err := Parse([]string{filepath.Join(searchDir, file.Name())})
+			if err != nil {
+				return err
+			}
+			for _, tag := range parser.Tags() {
+				if tag.Name == token {
+					matchedTags = append(matchedTags, tag)
+				}
+			}
+		}
+	}
+
+	log.Printf("matched %d tags", len(matchedTags))
+
+	symbols := tagsToSymbolInformation(matchedTags)
+	locs := make([]lsp.Location, len(symbols))
+	for i, symbol := range symbols {
+		locs[i] = symbol.Location
+	}
+
+	*result = locs
 	return nil
 }
 func (s *LangSvc) References(params *lsp.ReferenceParams, result *[]lsp.Location) error {
+	log.Printf("References(%+v)", params)
+
 	return nil
 }
 func (s *LangSvc) DocumentHighlights(params *lsp.ReferenceParams, result *lsp.DocumentHighlight) error {
@@ -69,24 +119,7 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 	if err != nil {
 		return err
 	}
-	tags := parser.Tags()
-
-	res := make([]lsp.SymbolInformation, 0, len(tags))
-	for _, tag := range tags {
-		nameIdx := strings.Index(tag.Def, tag.Name)
-		res = append(res, lsp.SymbolInformation{
-			Name: tag.Name,
-			Kind: lsp.SKMethod, // TODO
-			Location: lsp.Location{
-				URI: docURL.String(),
-				Range: lsp.Range{
-					Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
-					End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
-				},
-			},
-		})
-	}
-	*result = res
+	*result = tagsToSymbolInformation(parser.Tags())
 	return nil
 }
 func (s *LangSvc) WorkplaceSymbols(params *lsp.WorkplaceSymbolParams, result *[]lsp.SymbolInformation) error {
@@ -109,4 +142,23 @@ func (s *LangSvc) DocumentOnTypeFormatting(params *lsp.DocumentFormattingParams,
 }
 func (s *LangSvc) Rename(params *lsp.RenameParams, result *lsp.WorkspaceEdit) error {
 	return nil
+}
+
+func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
+	res := make([]lsp.SymbolInformation, 0, len(tags))
+	for _, tag := range tags {
+		nameIdx := strings.Index(tag.Def, tag.Name)
+		res = append(res, lsp.SymbolInformation{
+			Name: tag.Name,
+			Kind: lsp.SKMethod, // TODO
+			Location: lsp.Location{
+				URI: "file://" + tag.File,
+				Range: lsp.Range{
+					Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
+					End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
+				},
+			},
+		})
+	}
+	return res
 }
