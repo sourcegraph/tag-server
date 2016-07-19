@@ -45,21 +45,20 @@ func (s *LangSvc) SignatureHelpRequest(params *lsp.TextDocumentPositionParams, r
 func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result *[]lsp.Location) error {
 	log.Printf("GoToDefinition(%+v)", params)
 
-	docURL, err := url.Parse(params.TextDocument.URI)
+	file, err := fetchFile(params.TextDocument.URI)
 	if err != nil {
 		return err
 	}
-	b, err := ioutil.ReadFile(docURL.Path)
-	if err != nil {
-		return err
-	}
-	file := string(b)
 	token, _ := extractTokenFromPosition(file, params.Position.Line, params.Position.Character) // token to search for
 
 	log.Printf("search around for token %q", token)
 
 	var matchedTags []Tag
 	{
+		docURL, err := url.Parse(params.TextDocument.URI)
+		if err != nil {
+			return err
+		}
 		searchDir := filepath.Dir(docURL.Path)
 		dirfiles, err := ioutil.ReadDir(searchDir)
 		if err != nil {
@@ -95,6 +94,48 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 func (s *LangSvc) References(params *lsp.ReferenceParams, result *[]lsp.Location) error {
 	log.Printf("References(%+v)", params)
 
+	file, err := fetchFile(params.TextDocument.URI)
+	if err != nil {
+		return err
+	}
+	token, _ := extractTokenFromPosition(file, params.Position.Line, params.Position.Character)
+
+	var matchedRefs []lsp.Location
+	{
+		docURL, err := url.Parse(params.TextDocument.URI)
+		if err != nil {
+			return err
+		}
+		searchDir := filepath.Dir(docURL.Path)
+		dirfiles, err := ioutil.ReadDir(searchDir)
+		if err != nil {
+			return err
+		}
+		for _, file := range dirfiles {
+			if file.IsDir() {
+				continue
+			}
+			b, err := ioutil.ReadFile(filepath.Join(searchDir, file.Name()))
+			if err != nil {
+				return err
+			}
+			lines := strings.Split(string(b), "\n")
+
+			for l, line := range lines {
+				if c := strings.Index(line, token); c != -1 {
+					matchedRefs = append(matchedRefs, lsp.Location{
+						URI: "file://" + filepath.Join(searchDir, file.Name()),
+						Range: lsp.Range{
+							Start: lsp.Position{Line: l, Character: c},
+							End:   lsp.Position{Line: l, Character: c + len(token)},
+						},
+					})
+				}
+			}
+		}
+	}
+
+	*result = matchedRefs
 	return nil
 }
 func (s *LangSvc) DocumentHighlights(params *lsp.ReferenceParams, result *lsp.DocumentHighlight) error {
@@ -168,4 +209,17 @@ func extractTokenFromPosition(file string, l int, c int) (token string, loc lsp.
 		Start: lsp.Position{Line: l, Character: start},
 		End:   lsp.Position{Line: l, Character: end},
 	}
+}
+
+// fetches file contents from URI
+func fetchFile(uri string) (string, error) {
+	docURL, err := url.Parse(uri)
+	if err != nil {
+		return "", err
+	}
+	b, err := ioutil.ReadFile(docURL.Path)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
