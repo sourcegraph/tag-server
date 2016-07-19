@@ -12,7 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
-type Tag struct {
+type ETag struct {
 	File    string
 	Def     string
 	Name    string
@@ -31,7 +31,7 @@ type ETagsParser struct {
 	config *Config
 
 	// output
-	tags      []Tag
+	tags      []ETag
 	langFiles map[string][]string
 
 	// temporary state
@@ -129,7 +129,7 @@ func (p *ETagsParser) Refs() []*graph.Ref {
 	return refs
 }
 
-func (p *ETagsParser) Tags() []Tag {
+func (p *ETagsParser) Tags() []ETag {
 	return p.tags
 }
 
@@ -193,7 +193,7 @@ func (p *ETagsParser) parseLine(line string) error {
 		return fmt.Errorf("tags line parsing error: could not parse byte offset, line was %q", line)
 	}
 
-	p.tags = append(p.tags, Tag{
+	p.tags = append(p.tags, ETag{
 		File:    p.curFile,
 		Def:     line[0:nameIdx],
 		Name:    line[nameIdx+1 : lineNoIdx],
@@ -207,7 +207,7 @@ func (p *ETagsParser) parseLine(line string) error {
 // definition derived from the specified tag.
 //
 // Precondition: it assumes that tag.Name exists in tag.Def.
-func defFormatDataFromTag(tag Tag) *DefFormatData {
+func defFormatDataFromTag(tag ETag) *DefFormatData {
 	nameIdx := strings.Index(tag.Def, tag.Name)
 	if nameIdx < 0 {
 		log.Printf("! warn: name (%q) not found in definition %q", tag.Name, tag.Def)

@@ -53,7 +53,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 
 	log.Printf("search around for token %q", token)
 
-	var matchedTags []Tag
+	var matchedTags []ETag
 	{
 		docURL, err := url.Parse(params.TextDocument.URI)
 		if err != nil {
@@ -176,7 +176,7 @@ func (s *LangSvc) Rename(params *lsp.RenameParams, result *lsp.WorkspaceEdit) er
 	return nil
 }
 
-func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
+func tagsToSymbolInformation(tags []ETag) []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.Def, tag.Name)
