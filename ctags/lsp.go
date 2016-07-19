@@ -54,16 +54,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 		return err
 	}
 	file := string(b)
-	lines := strings.Split(file, "\n")
-	line := lines[params.Position.Line]
-	start := strings.LastIndexAny(line[:params.Position.Character], " \r\n\t()\"'.,*-") + 1
-	end := strings.IndexAny(line[params.Position.Character:], " \r\n\t()\"'.,*-")
-	if end == -1 {
-		end = len(line)
-	} else {
-		end += params.Position.Character
-	}
-	token := line[start:end] // This is the token to search for
+	token, _ := extractTokenFromPosition(file, params.Position.Line, params.Position.Character) // token to search for
 
 	log.Printf("search around for token %q", token)
 
@@ -161,4 +152,20 @@ func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
 		})
 	}
 	return res
+}
+
+func extractTokenFromPosition(file string, l int, c int) (token string, loc lsp.Range) {
+	lines := strings.Split(file, "\n")
+	line := lines[l]
+	start := strings.LastIndexAny(line[:c], " \r\n\t()\"'.,*-") + 1
+	end := strings.IndexAny(line[c:], " \r\n\t()\"'.,*-")
+	if end == -1 {
+		end = len(line)
+	} else {
+		end += c
+	}
+	return line[start:end], lsp.Range{
+		Start: lsp.Position{Line: l, Character: start},
+		End:   lsp.Position{Line: l, Character: end},
+	}
 }
