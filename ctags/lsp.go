@@ -154,7 +154,7 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 	*result = tagsToSymbolInformation(parser.Tags())
 	return nil
 }
-func (s *LangSvc) WorkplaceSymbols(params *lsp.WorkplaceSymbolParams, result *[]lsp.SymbolInformation) error {
+func (s *LangSvc) WorkspaceSymbols(params *lsp.WorkspaceSymbolParams, result *[]lsp.SymbolInformation) error {
 	return nil
 }
 func (s *LangSvc) CodeAction(params *lsp.CodeActionParams, result *[]lsp.Command) error {
