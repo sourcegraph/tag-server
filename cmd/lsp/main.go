@@ -72,8 +72,8 @@ func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
 		}
 	}()
 
-	if req.IDSet {
-		resp = new(jsonrpc2.Response)
+	if !req.Notification {
+		resp = &jsonrpc2.Response{ID: req.ID}
 	}
 
 	switch req.Method {
