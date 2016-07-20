@@ -53,7 +53,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 
 	log.Printf("search around for token %q", token)
 
-	var matchedTags []ETag
+	var matchedTags []Tag
 	{
 		docURL, err := url.Parse(params.TextDocument.URI)
 		if err != nil {
@@ -68,7 +68,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 			if file.IsDir() {
 				continue
 			}
-			parser, err := Parse([]string{filepath.Join(searchDir, file.Name())})
+			parser, err := Parse2([]string{filepath.Join(searchDir, file.Name())})
 			if err != nil {
 				return err
 			}
@@ -82,7 +82,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 
 	log.Printf("matched %d tags", len(matchedTags))
 
-	symbols := etagsToSymbolInformation(matchedTags)
+	symbols := tagsToSymbolInformation(matchedTags)
 	locs := make([]lsp.Location, len(symbols))
 	for i, symbol := range symbols {
 		locs[i] = symbol.Location
@@ -147,11 +147,11 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 		return err
 	}
 
-	parser, err := Parse([]string{docURL.Path})
+	parser, err := Parse2([]string{docURL.Path})
 	if err != nil {
 		return err
 	}
-	*result = etagsToSymbolInformation(parser.Tags())
+	*result = tagsToSymbolInformation(parser.Tags())
 	return nil
 }
 func (s *LangSvc) WorkspaceSymbols(params *lsp.WorkspaceSymbolParams, result *[]lsp.SymbolInformation) error {
@@ -201,6 +201,10 @@ func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
+		if nameIdx < 0 {
+			log.Printf("! dropping tag because could not find name (%s) in def line prefix (%q)", tag.Name, tag.DefLinePrefix)
+			continue
+		}
 		kind := nameToSymbolKind[tag.Kind]
 		if kind == 0 {
 			kind = lsp.SKVariable
