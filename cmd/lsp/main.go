@@ -1,18 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"os"
 
-	"github.com/sourcegraph/tag-server/ctags"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/tag-server/server"
 )
 
 var (
@@ -25,119 +19,12 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	if err := run(); err != nil {
+	if err := server.Serve(server.Config{
+		Mode:    *mode,
+		Addr:    *addr,
+		Logfile: *logfile,
+	}); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func run() error {
-	if *logfile != "" {
-		f, err := os.Create(*logfile)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		log.SetOutput(io.MultiWriter(os.Stderr, f))
-	}
-
-	h := &jsonrpc2.LoggingHandler{handler{}}
-
-	switch *mode {
-	case "tcp":
-		lis, err := net.Listen("tcp", *addr)
-		if err != nil {
-			return err
-		}
-		defer lis.Close()
-		log.Println("listening on", *addr)
-		return jsonrpc2.Serve(lis, h)
-
-	case "stdio":
-		log.Println("reading on stdin, writing on stdout")
-		jsonrpc2.NewServerConn(os.Stdin, os.Stdout, h)
-		select {}
-
-	default:
-		return fmt.Errorf("invalid mode %q", *mode)
-	}
-}
-
-type handler struct{}
-
-func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("!!! PANIC recovered in Handle: %v", r)
-		}
-	}()
-
-	if !req.Notification {
-		resp = &jsonrpc2.Response{ID: req.ID}
-	}
-
-	switch req.Method {
-	case "initialize":
-		var res lsp.InitializeResult
-		ctags.Server.Initialize(&lsp.InitializeParams{}, &res)
-		resp.SetResult(res)
-
-	case "shutdown":
-		// Result is undefined, per
-		// https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#shutdown-request.
-		resp.SetResult(true)
-
-	case "textDocument/hover":
-		var params lsp.TextDocumentPositionParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
-
-		pos := params.Position
-		resp.SetResult(lsp.Hover{
-			Contents: []lsp.MarkedString{{Language: "markdown", Value: "Hello CTags!"}},
-			Range: lsp.Range{
-				Start: lsp.Position{Line: pos.Line, Character: pos.Character - 3},
-				End:   lsp.Position{Line: pos.Line, Character: pos.Character + 3},
-			},
-		})
-
-	case "textDocument/documentSymbol":
-		var params lsp.DocumentSymbolParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
-
-		var res []lsp.SymbolInformation
-		ctags.Server.DocumentSymbols(&params, &res)
-		resp.SetResult(res)
-
-	case "textDocument/definition":
-		var params lsp.TextDocumentPositionParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
-
-		var res []lsp.Location
-		ctags.Server.GoToDefinition(&params, &res)
-		resp.SetResult(res)
-
-	case "textDocument/references":
-		var params lsp.ReferenceParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			resp.Error = &jsonrpc2.Error{Code: 123, Message: "error!"}
-			return
-		}
-		var res []lsp.Location
-		ctags.Server.References(&params, &res)
-		resp.SetResult(res)
-
-	default:
-		log.Printf("! Unrecognized RPC call: %s", req.Method)
-	}
-
-	return
 }
