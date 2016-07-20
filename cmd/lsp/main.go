@@ -65,7 +65,7 @@ func run() error {
 
 type handler struct{}
 
-func (handler) Handle(req jsonrpc2.Request) (resp *jsonrpc2.Response) {
+func (handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("!!! PANIC recovered in Handle: %v", r)
