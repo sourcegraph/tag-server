@@ -13,9 +13,9 @@ import (
 )
 
 type Tag struct {
-	File    string
-	FindCmd string
-	Name    string
+	File          string
+	DefLinePrefix string
+	Name          string
 
 	// Extension fields
 	Access         string // "private", "public"
@@ -113,10 +113,10 @@ func (p *TagsParser) parseLine(line string) error {
 	}
 
 	p.tags = append(p.tags, Tag{
-		Name:    name,
-		File:    file,
-		FindCmd: findCmd,
-		Access:  extFields["access"],
+		Name:          name,
+		File:          file,
+		DefLinePrefix: findCmdToDefLinePrefix(findCmd),
+		Access:        extFields["access"],
 		// FileScope:      string,
 		// Inheritance:    string,
 		Kind:     extFields["kind"],
@@ -128,6 +128,14 @@ func (p *TagsParser) parseLine(line string) error {
 		Type:      extFields["typeref"],
 	})
 	return nil
+}
+
+func findCmdToDefLinePrefix(findCmd string) string {
+	def := strings.TrimSuffix(strings.TrimPrefix(findCmd, `/^`), `/;"`)
+	if strings.HasSuffix(def, "$") {
+		def = strings.TrimSuffix(def, "$")
+	}
+	return def
 }
 
 func Parse2(files []string) (*TagsParser, error) {

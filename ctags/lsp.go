@@ -82,7 +82,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 
 	log.Printf("matched %d tags", len(matchedTags))
 
-	symbols := tagsToSymbolInformation(matchedTags)
+	symbols := etagsToSymbolInformation(matchedTags)
 	locs := make([]lsp.Location, len(symbols))
 	for i, symbol := range symbols {
 		locs[i] = symbol.Location
@@ -151,7 +151,7 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 	if err != nil {
 		return err
 	}
-	*result = tagsToSymbolInformation(parser.Tags())
+	*result = etagsToSymbolInformation(parser.Tags())
 	return nil
 }
 func (s *LangSvc) WorkspaceSymbols(params *lsp.WorkspaceSymbolParams, result *[]lsp.SymbolInformation) error {
@@ -176,7 +176,51 @@ func (s *LangSvc) Rename(params *lsp.RenameParams, result *lsp.WorkspaceEdit) er
 	return nil
 }
 
-func tagsToSymbolInformation(tags []ETag) []lsp.SymbolInformation {
+var nameToSymbolKind = map[string]lsp.SymbolKind{
+	"file":        lsp.SKFile,
+	"module":      lsp.SKModule,
+	"namespace":   lsp.SKNamespace,
+	"package":     lsp.SKPackage,
+	"class":       lsp.SKClass,
+	"method":      lsp.SKMethod,
+	"property":    lsp.SKProperty,
+	"field":       lsp.SKField,
+	"constructor": lsp.SKConstructor,
+	"enum":        lsp.SKEnum,
+	"interface":   lsp.SKInterface,
+	"function":    lsp.SKFunction,
+	"variable":    lsp.SKVariable,
+	"constant":    lsp.SKConstant,
+	"string":      lsp.SKString,
+	"number":      lsp.SKNumber,
+	"boolean":     lsp.SKBoolean,
+	"array":       lsp.SKArray,
+}
+
+func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
+	res := make([]lsp.SymbolInformation, 0, len(tags))
+	for _, tag := range tags {
+		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
+		kind := nameToSymbolKind[tag.Kind]
+		if kind == 0 {
+			kind = lsp.SKVariable
+		}
+		res = append(res, lsp.SymbolInformation{
+			Name: tag.Name,
+			Kind: int(kind),
+			Location: lsp.Location{
+				URI: "file://" + tag.File,
+				Range: lsp.Range{
+					Start: lsp.Position{Line: tag.Line - 1, Character: nameIdx},
+					End:   lsp.Position{Line: tag.Line - 1, Character: nameIdx + len(tag.Name)},
+				},
+			},
+		})
+	}
+	return res
+}
+
+func etagsToSymbolInformation(tags []ETag) []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.Def, tag.Name)

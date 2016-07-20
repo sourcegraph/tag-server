@@ -21,7 +21,7 @@ func run() error {
 	tags := p.Tags()
 
 	for _, tag := range tags {
-		log.Printf("    %+v", tag)
+		log.Printf("    %+v", tag.DefLinePrefix)
 	}
 
 	return nil
