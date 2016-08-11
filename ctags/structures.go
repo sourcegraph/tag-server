@@ -51,6 +51,7 @@ type Def struct {
 	// tree-path for some def.
 	// The following regex captures the children of a tree-path X: X(/-[^/]*)*(/[^/-][^/]*)
 	TreePath string `protobuf:"bytes,17,opt,name=TreePath,proto3" json:"TreePath,omitempty"`
+	Line     uint32 `protobuf:"varint,18,opt,name=Line,proto3" json:"Line"`
 }
 
 type Output struct {

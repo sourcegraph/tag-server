@@ -95,6 +95,7 @@ func (p *ETagsParser) Defs() []*Def {
 				Unit:     ".",
 				Path:     fmt.Sprintf("%s:%s", tag.File, name),
 			},
+			Line:     uint32(tag.Line),
 			Name:     tag.Name,
 			File:     tag.File,
 			DefStart: uint32(defStart),

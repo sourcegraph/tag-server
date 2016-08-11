@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -140,7 +142,10 @@ func findCmdToDefLinePrefix(findCmd string) string {
 
 func Parse2(files []string) (*TagsParser, error) {
 	const tagsFilename = "tags"
-	args := []string{"-f", tagsFilename, "--fields=*", "--excmd=pattern"}
+	usr, err := user.Current()
+	optionsPath := path.Join(usr.HomeDir, ".ctags/.typescript_ctags")
+	parts := []string{"--options=", optionsPath}
+	args := []string{strings.Join(parts, ""), "-f", tagsFilename, "--fields=*", "--excmd=pattern"}
 	if len(files) == 0 {
 		args = append(args, "-R")
 	} else {

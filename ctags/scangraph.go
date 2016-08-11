@@ -6,6 +6,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
+	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -34,7 +37,10 @@ var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor"}
 
 func Parse(files []string) (*ETagsParser, error) {
 	const tagsFilename = "tags"
-	args := []string{"-e", "-f", tagsFilename}
+	usr, err := user.Current()
+	optionsPath := path.Join(usr.HomeDir, ".ctags/.typescript_ctags")
+	parts := []string{"--options=", optionsPath}
+	args := []string{strings.Join(parts, ""), "-e", "-f", tagsFilename}
 	if len(files) == 0 {
 		args = append(args, "-R")
 	} else {
