@@ -211,7 +211,7 @@ func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
 		}
 		res = append(res, lsp.SymbolInformation{
 			Name: tag.Name,
-			Kind: int(kind),
+			Kind: kind,
 			Location: lsp.Location{
 				URI: "file://" + tag.File,
 				Range: lsp.Range{
