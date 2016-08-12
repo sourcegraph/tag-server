@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/sourcegraph/tag-server/ctags"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -67,7 +66,7 @@ func (Handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 	switch req.Method {
 	case "initialize":
 		var res lsp.InitializeResult
-		ctags.Server.Initialize(&lsp.InitializeParams{}, &res)
+		Server.Initialize(&lsp.InitializeParams{}, &res)
 		resp.SetResult(res)
 
 	case "shutdown":
@@ -99,7 +98,7 @@ func (Handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 		}
 
 		var res []lsp.SymbolInformation
-		ctags.Server.DocumentSymbols(&params, &res)
+		Server.DocumentSymbols(&params, &res)
 		resp.SetResult(res)
 
 	case "textDocument/definition":
@@ -110,7 +109,7 @@ func (Handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 		}
 
 		var res []lsp.Location
-		ctags.Server.GoToDefinition(&params, &res)
+		Server.GoToDefinition(&params, &res)
 		resp.SetResult(res)
 
 	case "textDocument/references":
@@ -120,7 +119,7 @@ func (Handler) Handle(req *jsonrpc2.Request) (resp *jsonrpc2.Response) {
 			return
 		}
 		var res []lsp.Location
-		ctags.Server.References(&params, &res)
+		Server.References(&params, &res)
 		resp.SetResult(res)
 
 	default:

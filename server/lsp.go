@@ -1,4 +1,4 @@
-package ctags
+package server
 
 import (
 	"io/ioutil"
@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+
+	"github.com/sourcegraph/tag-server/ctags"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/lsp"
 )
@@ -53,7 +55,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 
 	log.Printf("search around for token %q", token)
 
-	var matchedTags []Tag
+	var matchedTags []ctags.Tag
 	{
 		docURL, err := url.Parse(params.TextDocument.URI)
 		if err != nil {
@@ -68,7 +70,7 @@ func (s *LangSvc) GoToDefinition(params *lsp.TextDocumentPositionParams, result 
 			if file.IsDir() {
 				continue
 			}
-			parser, err := Parse2([]string{filepath.Join(searchDir, file.Name())})
+			parser, err := ctags.Parse2([]string{filepath.Join(searchDir, file.Name())})
 			if err != nil {
 				return err
 			}
@@ -147,7 +149,7 @@ func (s *LangSvc) DocumentSymbols(params *lsp.DocumentSymbolParams, result *[]ls
 		return err
 	}
 
-	parser, err := Parse2([]string{docURL.Path})
+	parser, err := ctags.Parse2([]string{docURL.Path})
 	if err != nil {
 		return err
 	}
@@ -197,7 +199,7 @@ var nameToSymbolKind = map[string]lsp.SymbolKind{
 	"array":       lsp.SKArray,
 }
 
-func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
+func tagsToSymbolInformation(tags []ctags.Tag) []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.DefLinePrefix, tag.Name)
@@ -224,7 +226,7 @@ func tagsToSymbolInformation(tags []Tag) []lsp.SymbolInformation {
 	return res
 }
 
-func etagsToSymbolInformation(tags []ETag) []lsp.SymbolInformation {
+func etagsToSymbolInformation(tags []ctags.ETag) []lsp.SymbolInformation {
 	res := make([]lsp.SymbolInformation, 0, len(tags))
 	for _, tag := range tags {
 		nameIdx := strings.Index(tag.Def, tag.Name)
