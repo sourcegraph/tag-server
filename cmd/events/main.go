@@ -61,6 +61,47 @@ type HunkDiff struct {
 
 var fileHeaderRx = regexp.MustCompile(`diff \-\-git a\/([^\s]+) b\/(?:[^\s]+)`)
 var hunkHeaderRx = regexp.MustCompile(`\@\@ \-([0-9]+),([0-9]+) \+([0-9]+),([0-9]+) \@\@`)
+var typescriptRx = regexp.MustCompile(`<([A-Z]\w+).`)
+var functionRx = regexp.MustCompile(`(?:([A-Za-z0-9]+)*\()`)
+
+var ignore = map[string]bool{
+	// go builtins and other ignore strings
+	"append":     true,
+	"cap":        true,
+	"close":      true,
+	"copy":       true,
+	"delete":     true,
+	"image":      true,
+	"len":        true,
+	"make":       true,
+	"new":        true,
+	"print":      true,
+	"panic":      true,
+	"println":    true,
+	"real":       true,
+	"recover":    true,
+	"bool":       true,
+	"byte":       true,
+	"complex128": true,
+	"complex64":  true,
+	"float32":    true,
+	"float64":    true,
+	"int":        true,
+	"int16":      true,
+	"int32":      true,
+	"int64":      true,
+	"int8":       true,
+	"rune":       true,
+	"string":     true,
+	"uint":       true,
+	"uint16":     true,
+	"uint32":     true,
+	"uint64":     true,
+	"uint8":      true,
+	"uintptr":    true,
+	"func":       true,
+	"TODO":       true,
+}
 
 func (c *EventsCmd) Execute(args []string) error {
 	// TODO(beyang): this introduces an off-by-one error, but we use unified=1 because it makes the hunk header regex simpler
@@ -166,7 +207,35 @@ func (c *EventsCmd) Execute(args []string) error {
 			})
 		}
 	}
-
+	{
+		for _, hd := range hunkDiffs {
+			for _, newLine := range hd.New {
+				for _, match := range functionRx.FindStringSubmatch(newLine.Text) {
+					// temporary fix for bad regex, gr... regexes...
+					match1 := strings.TrimRight(match, "(")
+					if len(match1) > 0 && !ignore[match1] {
+						events = append(events, &sourcegraph.Evt{
+							Title: fmt.Sprintf("function %s was referenced", match1),
+							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s", match1, "filename", "commit"),
+							URL:   "TODO",
+							Type:  "referenced",
+						})
+					}
+				}
+				for _, match := range typescriptRx.FindStringSubmatch(newLine.Text) {
+					// temporary fix for bad regex, gr... regexes...
+					if len(match) > 0 && !ignore[match] {
+						events = append(events, &sourcegraph.Evt{
+							Title: fmt.Sprintf("React component %s was used", match),
+							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s", match, "filename", "commit"),
+							URL:   "TODO",
+							Type:  "referenced",
+						})
+					}
+				}
+			}
+		}
+	}
 	// TODO(beyang): update events-update API (batch)
 
 	// TODO(beyang): include authorship information for each def
