@@ -105,39 +105,38 @@ var ignore = map[string]bool{
 	"TODO":       true,
 }
 
-func generateUrl(repository string, commitHash string) string {
+func generateURL(repository string, commitHash string) string {
 	repository = strings.Replace(repository, "sourcegraph.com", "github.com", -1)
 	return fmt.Sprintf("https://www.%s/commit/%s", repository, commitHash)
 }
 
 func (c *EventsCmd) Execute(args []string) error {
-	// TODO(beyang): this introduces an off-by-one error, but we use unified=1 because it makes the hunk header regex simpler
-	b, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		return err
-	}
-	var commitHash = strings.TrimSpace(string(b))
+	var remoteURL, commitURL, commitHash, branch string
+	{
+		b, err := exec.Command("git", "rev-parse", "HEAD").Output()
+		if err != nil {
+			return err
+		}
+		commitHash = strings.TrimSpace(string(b))
 
-	b, err = exec.Command("git", "remote", "show", "origin").Output()
-	if err != nil {
-		return err
-	}
-	var branch = branchRx.FindStringSubmatch(string(b))[1]
-	var remoteURL = remoteRx.FindStringSubmatch(string(b))[1]
-	remoteURL = strings.Replace(remoteURL, "git@", "", 1)
-	remoteURL = strings.Replace(remoteURL, ":", "/", 1)
-	commitURL := generateUrl(remoteURL, commitHash)
-
-	fmt.Printf("remote url is %s\n", remoteURL)
-
-	b, err = exec.Command("git", "show", "--unified=1").Output()
-	if err != nil {
-		return err
+		b, err = exec.Command("git", "remote", "show", "origin").Output()
+		if err != nil {
+			return err
+		}
+		branch = branchRx.FindStringSubmatch(string(b))[1]
+		remoteURL = strings.Replace(
+			strings.Replace(branch, "git@", "", 1), ":", "/", 1,
+		)
+		commitURL = generateURL(remoteURL, commitHash)
 	}
 
-	// var fileDiffs []*FileDiff
 	var hunkDiffs []*HunkDiff
 	{
+		// TODO(beyang): this introduces an off-by-one error, but we use unified=1 because it makes the hunk header regex simpler
+		b, err := exec.Command("git", "show", "--unified=1").Output()
+		if err != nil {
+			return err
+		}
 		lines := strings.Split(string(b), "\n")
 		oldline, newline := -1, -1 // keep track of current lines in new and old
 		filename := ""
@@ -189,7 +188,8 @@ func (c *EventsCmd) Execute(args []string) error {
 	}
 
 	var events []*sourcegraph.Evt
-	{
+	{ // definition modification events
+		// TODO(beyang): include authorship information for each def
 		files := make([]string, 0, len(hunkDiffs))
 		for _, hd := range hunkDiffs {
 			if len(files) == 0 || files[len(files)-1] != hd.Filename {
@@ -232,9 +232,7 @@ func (c *EventsCmd) Execute(args []string) error {
 			})
 		}
 	}
-	{
-		// TODO(matt): assemble URL, need remote
-		// TODO(matt): refactor out since a lot of stuff is similar
+	{ // reference events
 		for _, hd := range hunkDiffs {
 			for _, newLine := range hd.New {
 				for _, match := range functionRx.FindAllStringSubmatch(newLine.Text, -1) {
@@ -261,15 +259,6 @@ func (c *EventsCmd) Execute(args []string) error {
 			}
 		}
 	}
-	// TODO(beyang): update events-update API (batch)
-
-	// TODO(beyang): include authorship information for each def
-
-	// TODO(beyang): emit refs
-	// Refs:
-	// - git diff -> changed lines + files
-	// - for each diff line, tokenize and find all potential refs
-	// - emit an event "X" started using "Y" (don't need to resolve to def)
 
 	return json.NewEncoder(os.Stdout).Encode(events)
 }
