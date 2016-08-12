@@ -63,6 +63,8 @@ var fileHeaderRx = regexp.MustCompile(`diff \-\-git a\/([^\s]+) b\/(?:[^\s]+)`)
 var hunkHeaderRx = regexp.MustCompile(`\@\@ \-([0-9]+),([0-9]+) \+([0-9]+),([0-9]+) \@\@`)
 var typescriptRx = regexp.MustCompile(`<([A-Z]\w+).`)
 var functionRx = regexp.MustCompile(`(?:([A-Za-z0-9]+)*\()`)
+var branchRx = regexp.MustCompile(`HEAD branch: ([A-Za-z0-9]+)\n`)
+var remoteRx = regexp.MustCompile(`Fetch\s*URL:\s*([A-Za-z0-9\.@:/-]+)\n`)
 
 var ignore = map[string]bool{
 	// go builtins and other ignore strings
@@ -115,6 +117,17 @@ func (c *EventsCmd) Execute(args []string) error {
 		return err
 	}
 	var commitHash = strings.TrimSpace(string(b))
+
+	b, err = exec.Command("git", "remote", "show", "origin").Output()
+	if err != nil {
+		return err
+	}
+	var branch = branchRx.FindStringSubmatch(string(b))[1]
+	var remoteURL = remoteRx.FindStringSubmatch(string(b))[1]
+	remoteURL = strings.Replace(remoteURL, "git@", "", 1)
+	remoteURL = strings.Replace(remoteURL, ":", "/", 1)
+
+	fmt.Printf("remote url is %s\n", remoteURL)
 
 	b, err = exec.Command("git", "show", "--unified=1").Output()
 	if err != nil {
@@ -219,16 +232,17 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 	}
 	{
+		// TODO(matt): assemble URL, need remote
+		// TODO(matt): refactor out since a lot of stuff is similar
 		for _, hd := range hunkDiffs {
 			for _, newLine := range hd.New {
-				for _, match := range functionRx.FindStringSubmatch(newLine.Text) {
+				for _, match := range functionRx.FindAllStringSubmatch(newLine.Text, -1) {
 					// temporary fix for bad regex, gr... regexes...
-					match1 := strings.TrimRight(match, "(")
-					if len(match1) > 0 && !ignore[match1] {
+					if len(match[1]) > 0 && !ignore[match[1]] {
 						events = append(events, &sourcegraph.Evt{
-							Title: fmt.Sprintf("function %s was referenced", match1),
-							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s", match1, hd.Filename, commitHash),
-							URL:   generateUrl("github.com/sourcegraph/sourcegraph", commitHash),
+							Title: fmt.Sprintf("function %s was referenced", match[1]),
+							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s on branch %s", match[1], hd.Filename, commitHash, branch),
+							URL:   generateUrl(remoteURL, commitHash),
 							Type:  "referenced",
 						})
 					}
@@ -237,8 +251,8 @@ func (c *EventsCmd) Execute(args []string) error {
 					if len(match) > 0 && !ignore[match] {
 						events = append(events, &sourcegraph.Evt{
 							Title: fmt.Sprintf("React component %s was used", match),
-							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s", match, hd.Filename, commitHash),
-							URL:   generateUrl("github.com/sourcegraph/sourcegraph", commitHash),
+							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s on branch %s", match, hd.Filename, commitHash, branch),
+							URL:   generateUrl(remoteURL, commitHash),
 							Type:  "referenced",
 						})
 					}
