@@ -126,6 +126,7 @@ func (c *EventsCmd) Execute(args []string) error {
 	var remoteURL = remoteRx.FindStringSubmatch(string(b))[1]
 	remoteURL = strings.Replace(remoteURL, "git@", "", 1)
 	remoteURL = strings.Replace(remoteURL, ":", "/", 1)
+	commitURL := generateUrl(remoteURL, commitHash)
 
 	fmt.Printf("remote url is %s\n", remoteURL)
 
@@ -225,7 +226,7 @@ func (c *EventsCmd) Execute(args []string) error {
 			events = append(events, &sourcegraph.Evt{
 				Title: fmt.Sprintf("%s %s%s was modified", tag.Kind, tag.Name, tag.Signature),
 				Body:  fmt.Sprintf("%s %s%s in %s was modified in commit", tag.Kind, tag.Name, tag.Signature, tag.File),
-				URL:   "TODO",
+				URL:   commitURL,
 				Type:  "modified",
 				// TODO(beyang): time
 			})
@@ -242,7 +243,7 @@ func (c *EventsCmd) Execute(args []string) error {
 						events = append(events, &sourcegraph.Evt{
 							Title: fmt.Sprintf("function %s was referenced", match[1]),
 							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s on branch %s", match[1], hd.Filename, commitHash, branch),
-							URL:   generateUrl(remoteURL, commitHash),
+							URL:   commitURL,
 							Type:  "referenced",
 						})
 					}
@@ -252,7 +253,7 @@ func (c *EventsCmd) Execute(args []string) error {
 						events = append(events, &sourcegraph.Evt{
 							Title: fmt.Sprintf("React component %s was used", match),
 							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s on branch %s", match, hd.Filename, commitHash, branch),
-							URL:   generateUrl(remoteURL, commitHash),
+							URL:   commitURL,
 							Type:  "referenced",
 						})
 					}
