@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sqs/pbtypes"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/sourcegraph/tag-server/ctags"
@@ -187,7 +187,7 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 	}
 
-	var events []*sourcegraph.Evt
+	var events []*Evt
 	{ // definition modification events
 		// TODO(beyang): include authorship information for each def
 		files := make([]string, 0, len(hunkDiffs))
@@ -223,7 +223,7 @@ func (c *EventsCmd) Execute(args []string) error {
 			}
 		}
 		for _, tag := range changedTags {
-			events = append(events, &sourcegraph.Evt{
+			events = append(events, &Evt{
 				Title: fmt.Sprintf("%s %s%s was modified", tag.Kind, tag.Name, tag.Signature),
 				Body:  fmt.Sprintf("%s %s%s in %s was modified in commit", tag.Kind, tag.Name, tag.Signature, tag.File),
 				URL:   commitURL,
@@ -238,7 +238,7 @@ func (c *EventsCmd) Execute(args []string) error {
 				for _, match := range functionRx.FindAllStringSubmatch(newLine.Text, -1) {
 					// temporary fix for bad regex, gr... regexes...
 					if len(match[1]) > 0 && !ignore[match[1]] {
-						events = append(events, &sourcegraph.Evt{
+						events = append(events, &Evt{
 							Title: fmt.Sprintf("function %s was referenced", match[1]),
 							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s on branch %s", match[1], hd.Filename, commitHash, branch),
 							URL:   commitURL,
@@ -248,7 +248,7 @@ func (c *EventsCmd) Execute(args []string) error {
 				}
 				for _, match := range typescriptRx.FindStringSubmatch(newLine.Text) {
 					if len(match) > 0 && !ignore[match] {
-						events = append(events, &sourcegraph.Evt{
+						events = append(events, &Evt{
 							Title: fmt.Sprintf("React component %s was used", match),
 							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s on branch %s", match, hd.Filename, commitHash, branch),
 							URL:   commitURL,
@@ -275,4 +275,14 @@ func (t tagSorter) Swap(i, j int) {
 }
 func (t tagSorter) Len() int {
 	return len(t.tags)
+}
+
+// Evt is copy-pasted from the Sourcegraph main repo
+type Evt struct {
+	ID    uint64             `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	Title string             `protobuf:"bytes,2,opt,name=Title,proto3" json:"Title,omitempty"`
+	Body  string             `protobuf:"bytes,3,opt,name=Body,proto3" json:"Body,omitempty"`
+	URL   string             `protobuf:"bytes,4,opt,name=URL,proto3" json:"URL,omitempty"`
+	Type  string             `protobuf:"bytes,5,opt,name=Type,proto3" json:"Type,omitempty"`
+	Time  *pbtypes.Timestamp `protobuf:"bytes,6,opt,name=Time" json:"Time,omitempty"`
 }
