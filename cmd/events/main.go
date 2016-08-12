@@ -103,9 +103,20 @@ var ignore = map[string]bool{
 	"TODO":       true,
 }
 
+func generateUrl(repository string, commitHash string) string {
+	repository = strings.Replace(repository, "sourcegraph.com", "github.com", -1)
+	return fmt.Sprintf("https://www.%s/commit/%s", repository, commitHash)
+}
+
 func (c *EventsCmd) Execute(args []string) error {
 	// TODO(beyang): this introduces an off-by-one error, but we use unified=1 because it makes the hunk header regex simpler
-	b, err := exec.Command("git", "show", "--unified=1").Output()
+	b, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return err
+	}
+	var commitHash = strings.TrimSpace(string(b))
+
+	b, err = exec.Command("git", "show", "--unified=1").Output()
 	if err != nil {
 		return err
 	}
@@ -216,19 +227,18 @@ func (c *EventsCmd) Execute(args []string) error {
 					if len(match1) > 0 && !ignore[match1] {
 						events = append(events, &sourcegraph.Evt{
 							Title: fmt.Sprintf("function %s was referenced", match1),
-							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s", match1, "filename", "commit"),
-							URL:   "TODO",
+							Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s", match1, hd.Filename, commitHash),
+							URL:   generateUrl("github.com/sourcegraph/sourcegraph", commitHash),
 							Type:  "referenced",
 						})
 					}
 				}
 				for _, match := range typescriptRx.FindStringSubmatch(newLine.Text) {
-					// temporary fix for bad regex, gr... regexes...
 					if len(match) > 0 && !ignore[match] {
 						events = append(events, &sourcegraph.Evt{
 							Title: fmt.Sprintf("React component %s was used", match),
-							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s", match, "filename", "commit"),
-							URL:   "TODO",
+							Body:  fmt.Sprintf("React component %s was used in file %s in commit %s", match, hd.Filename, commitHash),
+							URL:   generateUrl("github.com/sourcegraph/sourcegraph", commitHash),
 							Type:  "referenced",
 						})
 					}
