@@ -15,7 +15,7 @@ type EvtsPostOpts struct {
 }
 
 type Evt struct {
-	ID    uint64             `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	ID    string             `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Title string             `protobuf:"bytes,2,opt,name=Title,proto3" json:"Title,omitempty"`
 	Body  string             `protobuf:"bytes,3,opt,name=Body,proto3" json:"Body,omitempty"`
 	URL   string             `protobuf:"bytes,4,opt,name=URL,proto3" json:"URL,omitempty"`

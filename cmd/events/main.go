@@ -225,6 +225,7 @@ func (c *EventsCmd) Execute(args []string) error {
 				Hashes: []string{tag.Name, tag.File},
 				Users:  nil,
 				Event: &Evt{
+					ID:    fmt.Sprintf("modified:%s:%s:%s", tag.Name, tag.File, commitURL),
 					Title: fmt.Sprintf("%s %s%s was modified", tag.Kind, tag.Name, tag.Signature),
 					Body:  fmt.Sprintf("%s %s%s in %s was modified in commit", tag.Kind, tag.Name, tag.Signature, tag.File),
 					URL:   commitURL,
@@ -244,6 +245,7 @@ func (c *EventsCmd) Execute(args []string) error {
 							Hashes: []string{match[1], hd.Filename},
 							Users:  nil,
 							Event: &Evt{
+								ID:    fmt.Sprintf("referenced:%s:%s:%s", match[1], hd.Filename, commitURL),
 								Title: fmt.Sprintf("function %s was referenced", match[1]),
 								Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s on branch %s", match[1], hd.Filename, commitHash, branch),
 								URL:   commitURL,
@@ -258,6 +260,7 @@ func (c *EventsCmd) Execute(args []string) error {
 							Hashes: []string{match, hd.Filename},
 							Users:  nil,
 							Event: &Evt{
+								ID:    fmt.Sprintf("referenced(react):%s:%s:%s", match, hd.Filename, commitURL),
 								Title: fmt.Sprintf("React component %s was used", match),
 								Body:  fmt.Sprintf("React component %s was used in file %s in commit %s on branch %s", match, hd.Filename, commitHash, branch),
 								URL:   commitURL,
