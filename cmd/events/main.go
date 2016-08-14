@@ -105,11 +105,11 @@ var ignore = map[string]bool{
 
 func generateURL(repository string, commitHash string) string {
 	repository = strings.Replace(repository, "sourcegraph.com", "github.com", -1)
-	return fmt.Sprintf("https://www.%s/commit/%s", repository, commitHash)
+	return fmt.Sprintf("https://%s/commit/%s", repository, commitHash)
 }
 
 func (c *EventsCmd) Execute(args []string) error {
-	var remoteURL, commitURL, commitHash, branch string
+	var remoteURL, commitURL, commitHash, branch, authorName, authorFirstName, authorEmail string
 	{
 		b, err := exec.Command("git", "rev-parse", "HEAD").Output()
 		if err != nil {
@@ -117,15 +117,31 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 		commitHash = strings.TrimSpace(string(b))
 
+		b, err = exec.Command("git", "--no-pager", "show", "-s", "--format='%an::%ae'", "HEAD").Output()
+		if err != nil {
+			return err
+		}
+		parsedOut := strings.Split(string(b), "::")
+		if len(parsedOut) != 2 {
+			return fmt.Errorf("unexpected output format for getting author, output was: %q", string(b))
+		}
+		authorName, authorEmail = parsedOut[0], parsedOut[1]
+		authorFirstName = strings.Fields(authorName)[0]
+
 		b, err = exec.Command("git", "remote", "show", "origin").Output()
 		if err != nil {
 			return err
 		}
 		branch = branchRx.FindStringSubmatch(string(b))[1]
+		remote := remoteRx.FindStringSubmatch(string(b))[1]
 		remoteURL = strings.Replace(
-			strings.Replace(branch, "git@", "", 1), ":", "/", 1,
+			strings.Replace(remote, "git@", "", 1), ":", "/", 1,
 		)
+		if strings.HasSuffix(remoteURL, ".git") {
+			remoteURL = remoteURL[:len(remoteURL)-len(".git")]
+		}
 		commitURL = generateURL(remoteURL, commitHash)
+		log.Printf("# %s, %s, %s", commitURL, remoteURL, commitHash)
 	}
 
 	var hunkDiffs []*HunkDiff
@@ -222,14 +238,14 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 		for _, tag := range changedTags {
 			events = append(events, &EvtUpdate{
-				Hashes: []string{tag.Name, tag.File},
+				Hashes: []string{tag.Name, tag.File, authorFirstName, authorEmail},
 				Users:  nil,
 				Event: &Evt{
 					ID:    fmt.Sprintf("modified:%s:%s:%s", tag.Name, tag.File, commitURL),
-					Title: fmt.Sprintf("%s %s%s was modified", tag.Kind, tag.Name, tag.Signature),
-					Body:  fmt.Sprintf("%s %s%s in %s was modified in commit", tag.Kind, tag.Name, tag.Signature, tag.File),
+					Title: fmt.Sprintf("%s modified %s %s%s", authorFirstName, tag.Kind, tag.Name, tag.Signature),
+					Body:  fmt.Sprintf(`%s modified %s %s%s in %s on branch %s in %s`, authorFirstName, tag.Kind, tag.Name, tag.Signature, tag.File, branch, remoteURL),
 					URL:   commitURL,
-					Type:  "modified",
+					Type:  EvtTypeModified,
 					// TODO(beyang): time
 				},
 			})
@@ -242,14 +258,14 @@ func (c *EventsCmd) Execute(args []string) error {
 					// temporary fix for bad regex, gr... regexes...
 					if len(match[1]) > 0 && !ignore[match[1]] {
 						events = append(events, &EvtUpdate{
-							Hashes: []string{match[1], hd.Filename},
+							Hashes: []string{match[1], hd.Filename, authorFirstName, authorEmail},
 							Users:  nil,
 							Event: &Evt{
 								ID:    fmt.Sprintf("referenced:%s:%s:%s", match[1], hd.Filename, commitURL),
-								Title: fmt.Sprintf("function %s was referenced", match[1]),
-								Body:  fmt.Sprintf("function %s was referenced in file %s in commit %s on branch %s", match[1], hd.Filename, commitHash, branch),
+								Title: fmt.Sprintf("%s referenced %s", authorFirstName, match[1]),
+								Body:  fmt.Sprintf("%s referenced %s in %s on branch %s in %s", authorFirstName, match[1], hd.Filename, branch, remoteURL),
 								URL:   commitURL,
-								Type:  "referenced",
+								Type:  EvtTypeReferenced,
 							},
 						})
 					}
@@ -261,10 +277,10 @@ func (c *EventsCmd) Execute(args []string) error {
 							Users:  nil,
 							Event: &Evt{
 								ID:    fmt.Sprintf("referenced(react):%s:%s:%s", match, hd.Filename, commitURL),
-								Title: fmt.Sprintf("React component %s was used", match),
-								Body:  fmt.Sprintf("React component %s was used in file %s in commit %s on branch %s", match, hd.Filename, commitHash, branch),
+								Title: fmt.Sprintf("%s used React component %s", authorFirstName, match),
+								Body:  fmt.Sprintf("%s used React component in %s on branch %s in %s", authorFirstName, match, hd.Filename, branch, remoteURL),
 								URL:   commitURL,
-								Type:  "referenced",
+								Type:  EvtTypeReferenced,
 							},
 						})
 					}

@@ -2,7 +2,14 @@ package main
 
 import "sourcegraph.com/sqs/pbtypes"
 
-// These structures are copied and pasted from the Sourcegraph main repo
+const (
+	EvtTypeModified   = "modified"
+	EvtTypeReferenced = "referenced"
+)
+
+// -------------------------------------------------------------------
+// The structures below this line are copied and pasted from the
+// Sourcegraph main repo
 
 type EvtUpdate struct {
 	Hashes []string `protobuf:"bytes,1,rep,name=Hashes" json:"Hashes,omitempty"`
