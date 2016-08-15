@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 
+	"sourcegraph.com/sqs/pbtypes"
+
 	flags "github.com/jessevdk/go-flags"
 	"github.com/sourcegraph/tag-server/ctags"
 )
@@ -110,6 +112,7 @@ func generateURL(repository string, commitHash string) string {
 
 func (c *EventsCmd) Execute(args []string) error {
 	var remoteURL, commitURL, commitHash, branch, authorName, authorFirstName, authorEmail string
+	var commitTimestamp int64
 	{
 		b, err := exec.Command("git", "rev-parse", "HEAD").Output()
 		if err != nil {
@@ -117,16 +120,20 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 		commitHash = strings.TrimSpace(string(b))
 
-		b, err = exec.Command("git", "--no-pager", "show", "-s", "--format=%an::%ae", "HEAD").Output()
+		b, err = exec.Command("git", "--no-pager", "show", "-s", "--format=%an::%ae::%ct", "HEAD").Output()
 		if err != nil {
 			return err
 		}
 		parsedOut := strings.Split(string(b), "::")
-		if len(parsedOut) != 2 {
+		if len(parsedOut) != 3 {
 			return fmt.Errorf("unexpected output format for getting author, output was: %q", string(b))
 		}
 		authorName, authorEmail = parsedOut[0], parsedOut[1]
 		authorFirstName = strings.Fields(authorName)[0]
+		commitTimestamp, err = strconv.ParseInt(strings.TrimSpace(parsedOut[2]), 10, 0)
+		if err != nil {
+			return err
+		}
 
 		b, err = exec.Command("git", "remote", "show", "origin").Output()
 		if err != nil {
@@ -247,7 +254,7 @@ func (c *EventsCmd) Execute(args []string) error {
 					Body:  fmt.Sprintf(`%s modified %s %s%s in %s on branch %s in %s`, authorFirstName, tag.Kind, tag.Name, tag.Signature, tag.File, branch, remoteURL),
 					URL:   commitURL,
 					Type:  EvtTypeModified,
-					// TODO(beyang): time
+					Time:  &pbtypes.Timestamp{Seconds: commitTimestamp},
 				},
 			})
 			subscriptions = append(subscriptions,
@@ -271,6 +278,7 @@ func (c *EventsCmd) Execute(args []string) error {
 								Body:  fmt.Sprintf("%s referenced %s in %s on branch %s in %s", authorFirstName, match[1], hd.Filename, branch, remoteURL),
 								URL:   commitURL,
 								Type:  EvtTypeReferenced,
+								Time:  &pbtypes.Timestamp{Seconds: commitTimestamp},
 							},
 						})
 						subscriptions = append(subscriptions,
@@ -290,6 +298,7 @@ func (c *EventsCmd) Execute(args []string) error {
 								Body:  fmt.Sprintf("%s used React component in %s on branch %s in %s", authorFirstName, match, hd.Filename, branch, remoteURL),
 								URL:   commitURL,
 								Type:  EvtTypeReferenced,
+								Time:  &pbtypes.Timestamp{Seconds: commitTimestamp},
 							},
 						})
 						subscriptions = append(subscriptions,
