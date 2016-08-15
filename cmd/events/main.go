@@ -275,10 +275,12 @@ func (c *EventsCmd) Execute(args []string) error {
 							Event: &Evt{
 								ID:    fmt.Sprintf("referenced:%s:%s:%s", match[1], hd.Filename, commitURL),
 								Title: fmt.Sprintf("%s referenced %s", authorFirstName, match[1]),
-								Body:  fmt.Sprintf("%s referenced %s in %s on branch %s in %s", authorFirstName, match[1], hd.Filename, branch, remoteURL),
-								URL:   commitURL,
-								Type:  EvtTypeReferenced,
-								Time:  &pbtypes.Timestamp{Seconds: commitTimestamp},
+								Body: fmt.Sprintf(`%s referenced %s in %s on branch %s in %s
+
+<pre>%s</pre>`, authorFirstName, match[1], hd.Filename, branch, remoteURL, newLine.Text),
+								URL:  commitURL,
+								Type: EvtTypeReferenced,
+								Time: &pbtypes.Timestamp{Seconds: commitTimestamp},
 							},
 						})
 						subscriptions = append(subscriptions,
@@ -295,10 +297,12 @@ func (c *EventsCmd) Execute(args []string) error {
 							Event: &Evt{
 								ID:    fmt.Sprintf("referenced(react):%s:%s:%s", match, hd.Filename, commitURL),
 								Title: fmt.Sprintf("%s used React component %s", authorFirstName, match),
-								Body:  fmt.Sprintf("%s used React component in %s on branch %s in %s", authorFirstName, match, hd.Filename, branch, remoteURL),
-								URL:   commitURL,
-								Type:  EvtTypeReferenced,
-								Time:  &pbtypes.Timestamp{Seconds: commitTimestamp},
+								Body: fmt.Sprintf(`%s used React component in %s on branch %s in %s
+
+<pre>%s</pre>`, authorFirstName, match, hd.Filename, branch, remoteURL, newLine.Text),
+								URL:  commitURL,
+								Type: EvtTypeReferenced,
+								Time: &pbtypes.Timestamp{Seconds: commitTimestamp},
 							},
 						})
 						subscriptions = append(subscriptions,
