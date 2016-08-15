@@ -18,7 +18,13 @@ type EvtUpdate struct {
 }
 
 type EvtsPostOpts struct {
-	Updates []*EvtUpdate `protobuf:"bytes,1,rep,name=Updates" json:"Updates,omitempty"`
+	Updates             []*EvtUpdate `protobuf:"bytes,1,rep,name=Updates" json:"Updates,omitempty"`
+	SubscriptionUpdates []*SubUpdate `protobuf:"bytes,2,rep,name=SubscriptionUpdates" json:"SubscriptionUpdates,omitempty"`
+}
+
+type SubUpdate struct {
+	Src  string   `protobuf:"bytes,1,opt,name=Src,proto3" json:"Src,omitempty"`
+	Dsts []string `protobuf:"bytes,2,rep,name=Dsts" json:"Dsts,omitempty"`
 }
 
 type Evt struct {
