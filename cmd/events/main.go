@@ -117,7 +117,7 @@ func (c *EventsCmd) Execute(args []string) error {
 		}
 		commitHash = strings.TrimSpace(string(b))
 
-		b, err = exec.Command("git", "--no-pager", "show", "-s", "--format='%an::%ae'", "HEAD").Output()
+		b, err = exec.Command("git", "--no-pager", "show", "-s", "--format=%an::%ae", "HEAD").Output()
 		if err != nil {
 			return err
 		}
@@ -202,6 +202,7 @@ func (c *EventsCmd) Execute(args []string) error {
 	}
 
 	var events []*EvtUpdate
+	var subscriptions []*SubUpdate
 	{ // definition modification events
 		// TODO(beyang): include authorship information for each def
 		files := make([]string, 0, len(hunkDiffs))
@@ -249,6 +250,10 @@ func (c *EventsCmd) Execute(args []string) error {
 					// TODO(beyang): time
 				},
 			})
+			subscriptions = append(subscriptions,
+				&SubUpdate{Src: authorFirstName, Dsts: []string{tag.Name}},
+				&SubUpdate{Src: authorName, Dsts: []string{tag.Name}},
+			)
 		}
 	}
 	{ // reference events
@@ -268,6 +273,10 @@ func (c *EventsCmd) Execute(args []string) error {
 								Type:  EvtTypeReferenced,
 							},
 						})
+						subscriptions = append(subscriptions,
+							&SubUpdate{Src: authorFirstName, Dsts: []string{match[1]}},
+							&SubUpdate{Src: authorName, Dsts: []string{match[1]}},
+						)
 					}
 				}
 				for _, match := range typescriptRx.FindStringSubmatch(newLine.Text) {
@@ -283,13 +292,17 @@ func (c *EventsCmd) Execute(args []string) error {
 								Type:  EvtTypeReferenced,
 							},
 						})
+						subscriptions = append(subscriptions,
+							&SubUpdate{Src: authorFirstName, Dsts: []string{match}},
+							&SubUpdate{Src: authorName, Dsts: []string{match}},
+						)
 					}
 				}
 			}
 		}
 	}
 
-	return json.NewEncoder(os.Stdout).Encode(EvtsPostOpts{Updates: events})
+	return json.NewEncoder(os.Stdout).Encode(EvtsPostOpts{Updates: events, SubscriptionUpdates: subscriptions})
 }
 
 type tagSorter struct {
