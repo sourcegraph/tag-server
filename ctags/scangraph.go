@@ -30,7 +30,7 @@ func Scan() ([]*unit.SourceUnit, error) {
 	return p.Units(), nil
 }
 
-var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor"}
+var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor", "dist"}
 
 func Parse(files []string) (*ETagsParser, error) {
 	const tagsFilename = "tags"
